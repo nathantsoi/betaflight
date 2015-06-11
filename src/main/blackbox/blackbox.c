@@ -202,9 +202,9 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
 #endif
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
-    {"gyroData",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroData",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroData",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"accSmooth",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -250,7 +250,6 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SEND_GPS_H_HEADERS,
     BLACKBOX_STATE_SEND_GPS_G_HEADERS,
     BLACKBOX_STATE_SEND_SYSINFO,
-    BLACKBOX_STATE_PRERUN,
     BLACKBOX_STATE_RUNNING,
     BLACKBOX_STATE_SHUTTING_DOWN
 } BlackboxState;
@@ -267,6 +266,8 @@ extern uint8_t motorCount;
 extern uint32_t currentTime;
 
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
+
+static uint32_t blackboxLastArmingBeep = 0;
 
 static struct {
     uint32_t headerIndex;
@@ -485,7 +486,7 @@ static void writeIntraframe(void)
 #endif
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->gyroData[x]);
+        blackboxWriteSignedVB(blackboxCurrent->gyroADC[x]);
     }
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
@@ -601,7 +602,7 @@ static void writeInterframe(void)
 
     //Since gyros, accs and motors are noisy, base the prediction on the average of the history:
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        blackboxWriteSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
+        blackboxWriteSignedVB(blackboxHistory[0]->gyroADC[x] - (blackboxHistory[1]->gyroADC[x] + blackboxHistory[2]->gyroADC[x]) / 2);
     }
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
@@ -683,6 +684,12 @@ void startBlackbox(void)
          * cache those now.
          */
         blackboxBuildConditionCache();
+
+        /*
+         * Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
+         * it finally plays the beep for this arming event.
+         */
+        blackboxLastArmingBeep = getArmingBeepTimeMicros();
 
         blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
     }
@@ -774,7 +781,7 @@ static void loadBlackboxState(void)
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroData[i] = gyroData[i];
+        blackboxCurrent->gyroADC[i] = gyroADC[i];
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1012,16 +1019,19 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
     }
 }
 
-// Write the time of the last arming beep to the log as a synchronization point
-static void blackboxLogArmingBeep()
+/* If an arming beep has played since it was last logged, write the time of the arming beep to the log as a synchronization point */
+static void blackboxCheckAndLogArmingBeep()
 {
     flightLogEvent_syncBeep_t eventData;
 
-    // Get time of last arming beep (in system-uptime microseconds)
-    eventData.time = getArmingBeepTimeMicros();
+    // Use != so that we can still detect a change if the counter wraps
+    if (getArmingBeepTimeMicros() != blackboxLastArmingBeep) {
+        blackboxLastArmingBeep = getArmingBeepTimeMicros();
 
-    // Write the time to the log
-    blackboxLogEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, (flightLogEventData_t *) &eventData);
+        eventData.time = blackboxLastArmingBeep;
+
+        blackboxLogEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, (flightLogEventData_t *) &eventData);
+    }
 }
 
 /**
@@ -1082,13 +1092,8 @@ void handleBlackbox(void)
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
             if (blackboxWriteSysinfo()) {
-                blackboxSetState(BLACKBOX_STATE_PRERUN);
+                blackboxSetState(BLACKBOX_STATE_RUNNING);
             }
-        break;
-        case BLACKBOX_STATE_PRERUN:
-            blackboxSetState(BLACKBOX_STATE_RUNNING);
-
-            blackboxLogArmingBeep();
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
@@ -1099,6 +1104,8 @@ void handleBlackbox(void)
                 loadBlackboxState();
                 writeIntraframe();
             } else {
+                blackboxCheckAndLogArmingBeep();
+
                 /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
                  * recorded / skipped frames when the I frame's position is considered:
                  */
