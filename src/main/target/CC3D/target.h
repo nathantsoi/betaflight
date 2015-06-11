@@ -114,6 +114,9 @@
 #define AUTOTUNE
 #define USE_SERVOS
 
+#define USE_SERIAL_1WIRE
+#define SERIAL_1WIRE_MOTOR_COUNT 6
+
 #if defined(OPBL)
 #undef AUTOTUNE // disabled for OPBL build due to code size.
 #endif

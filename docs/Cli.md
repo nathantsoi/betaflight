@@ -83,6 +83,7 @@ Re-apply any new defaults as desired.
 | feature        | list or -val or val                            |
 | get            | get variable value                             |
 | gpspassthrough | passthrough gps to serial                      |
+| 1wire [motor]  | where [motor] is the output port to connect    |
 | help           |                                                |
 | led            | configure leds                                 |
 | map            | mapping of rc channel order                    |

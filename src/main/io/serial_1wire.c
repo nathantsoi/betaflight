@@ -35,107 +35,132 @@
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "io/serial_1wire.h"
+
+#ifdef USE_SERIAL_1WIRE
 
 #define BIT_DELAY_HALF 34
 #define BIT_DELAY 68
 
+#if defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
+const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
+    { GPIOA, Pin_8 },       // PWM9 - OUT1
+    { GPIOA, Pin_11 },      // PWM10 - OUT2
+    { GPIOB, Pin_6, },      // PWM11 - OUT3
+    { GPIOB, Pin_7, },      // PWM12 - OUT4
+    { GPIOB, Pin_8, },      // PWM13 - OUT5
+    { GPIOB, Pin_9, }       // PWM14 - OUT6
+};
+#endif
+
+#ifdef CC3D
+const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
+    { GPIOB, Pin_9 },    // S1_OUT
+    { GPIOB, Pin_8 },    // S2_OUT
+    { GPIOB, Pin_7 },    // S3_OUT
+    { GPIOA, Pin_8 },    // S4_OUT
+    { GPIOB, Pin_4 },    // S5_OUT - GPIO_PartialRemap_TIM3 - LED Strip
+    { GPIOA, Pin_2 }     // S6_OUT
+};
+#endif
+
 volatile uint8_t serialBuffer[255];
 
-void gpio_config_out(void)
+void gpio_config_out(const serial1WireHardware_t *serial1WireHardwarePtr)
 {
     gpio_config_t cfg;
 
     cfg.mode = Mode_Out_PP;
-    cfg.pin = GPIO_Pin_8;
+    cfg.pin = serial1WireHardwarePtr->pin;
     cfg.speed = Speed_2MHz;
 
-    gpioInit(GPIOA, &cfg);
+    gpioInit(serial1WireHardwarePtr->gpio, &cfg);
 }
 
-void gpio_config_in(void)
+void gpio_config_in(const serial1WireHardware_t *serial1WireHardwarePtr)
 {
     gpio_config_t cfg;
 
     cfg.mode = Mode_IPU;
-    cfg.pin = GPIO_Pin_8;
+    cfg.pin = serial1WireHardwarePtr->pin;
     cfg.speed = Speed_2MHz;
 
-    gpioInit(GPIOA, &cfg);
+    gpioInit(serial1WireHardwarePtr->gpio, &cfg);
 }
 
-void sendDigital1()
+void sendDigital1(const serial1WireHardware_t *serial1WireHardwarePtr)
 {
-    digitalHi(GPIOA, GPIO_Pin_8);
+    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY);
-    digitalLo(GPIOA, GPIO_Pin_8);
+    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY);
 }
 
-void sendDigital0()
+void sendDigital0(const serial1WireHardware_t *serial1WireHardwarePtr)
 {
-    digitalHi(GPIOA, GPIO_Pin_8);
+    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY_HALF);
-    digitalLo(GPIOA, GPIO_Pin_8);
+    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY_HALF);
-    digitalHi(GPIOA, GPIO_Pin_8);
+    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY_HALF);
-    digitalLo(GPIOA, GPIO_Pin_8);
+    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY_HALF);
 }
 
-void sendByte(uint8_t byte)
+void sendByte(uint8_t byte, const serial1WireHardware_t *serial1WireHardwarePtr)
 {
     for(uint8_t i = 0; i < 8; i++)
     {
         if(byte & (1 << i))
         {
-            sendDigital1();
+            sendDigital1(serial1WireHardwarePtr);
         } else {
-            sendDigital0();
+            sendDigital0(serial1WireHardwarePtr);
         }
     }
 }
 
-void sendBuf(uint8_t txlen)
+void sendBuf(uint8_t txlen, const serial1WireHardware_t *serial1WireHardwarePtr)
 {
-    gpio_config_out();
+    gpio_config_out(serial1WireHardwarePtr);
 
     // send intro message
     for(uint8_t i = 0; i < 23; i++)
     {
-        sendDigital1();
+        sendDigital1(serial1WireHardwarePtr);
     }
-    sendDigital0();
+    sendDigital0(serial1WireHardwarePtr);
 
     for(uint8_t i = 0; i < txlen; i++)
     {
-        sendByte(serialBuffer[i]);
+        sendByte(serialBuffer[i], serial1WireHardwarePtr);
     }
 
     // send trailing message
-    digitalHi(GPIOA, GPIO_Pin_8);
+    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
     delayMicroseconds(BIT_DELAY_HALF);
 
-    gpio_config_in();
+    gpio_config_in(serial1WireHardwarePtr);
 }
 
-int8_t readBit(uint32_t bitPeriod)
+int8_t readBit(uint32_t bitPeriod, const serial1WireHardware_t *serial1WireHardwarePtr)
 {
     uint32_t startTime = micros();
-    while(digitalIn(GPIOA, GPIO_Pin_8)) // wait to go low
+    while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
         if (micros() > startTime + 250)
             return -1;
-    while(!digitalIn(GPIOA, GPIO_Pin_8)) // wait to go high
+    while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
         if (micros() > startTime + 250)
             return -1;
     uint32_t endTime = micros();
 
     if((endTime - startTime) < (bitPeriod / 1.5)) // short pulses
     {
-        while(digitalIn(GPIOA, GPIO_Pin_8)) // wait for second half of bit
+        while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait for second half of bit
             if (micros() > startTime + 250)
                 return -1;
-        while(!digitalIn(GPIOA, GPIO_Pin_8))
+        while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin))
             if (micros() > startTime + 250)
                 return -1;
         return 0;
@@ -143,49 +168,43 @@ int8_t readBit(uint32_t bitPeriod)
     return 1;
 }
 
-void USBLinker(void)
+void serial1Wire(serialPort_t *serialPortIn, uint8_t motorIndex)
 {
-    // just use motor pin 1 = PWM9 TIM1_CH1 PA8 for now
-
-    // take control
     LED0_OFF;
 #ifdef LED1
     LED1_OFF;
 #endif
-    gpio_config_in();
+    const serial1WireHardware_t *serial1WireHardwarePtr = &serial1WireOut[motorIndex];
 
-    // TODO open serial port
-    // serialInit(9600);
-    serialPort_t *serialPort = NULL;
-
+    gpio_config_in(serial1WireHardwarePtr);
     uint16_t lastPin = 0;
 
     while(1)
     {
-        if (serialTotalBytesWaiting(serialPort))
+        if (serialTotalBytesWaiting(serialPortIn))
         {
             LED1_ON;
             uint16_t rxlen = 0;
-            while(serialTotalBytesWaiting(serialPort))
+            while(serialTotalBytesWaiting(serialPortIn))
             {
-                serialBuffer[rxlen++] = serialRead(serialPort);
+                serialBuffer[rxlen++] = serialRead(serialPortIn);
                 delay(2);
 
                 if (rxlen == 255)
                 {
-                    while(serialTotalBytesWaiting(serialPort))
-                        serialRead(serialPort);
+                    while(serialTotalBytesWaiting(serialPortIn))
+                        serialRead(serialPortIn);
                     break;
                 }
             }
 #ifdef LED1
             LED1_OFF;
 #endif
-            sendBuf(rxlen);
+            sendBuf(rxlen, serial1WireHardwarePtr);
             lastPin = 1;
         } else {
             // read from pin
-            uint16_t curPin = digitalIn(GPIOA, GPIO_Pin_8);
+            uint16_t curPin = digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
 
             if ((lastPin == 0) && (curPin != 0)) // pin went high from low
             {
@@ -196,19 +215,19 @@ void USBLinker(void)
                 startTime = micros();
 
                 // get starting time at next low-high transition
-                while(digitalIn(GPIOA, GPIO_Pin_8)) // wait to go low
+                while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
                     if (micros() > startTime + 250)
                                 break;
-                while(!digitalIn(GPIOA, GPIO_Pin_8)) // wait to go high
+                while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
                     if (micros() > startTime + 250)
                                 break;
                 startTime = micros();
 
                 // get ending time at next low-high transition
-                while(digitalIn(GPIOA, GPIO_Pin_8)) // wait to go low
+                while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
                     if (micros() > startTime + 250)
                                 break;
-                while(!digitalIn(GPIOA, GPIO_Pin_8)) // wait to go high
+                while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
                     if (micros() > startTime + 250)
                                 break;
                 endTime = micros();
@@ -216,7 +235,7 @@ void USBLinker(void)
                 bitPeriod = endTime - startTime; // doesn't include overflow case
 
                 uint8_t introCount = 0;
-                while(readBit(bitPeriod) == 1) // exit on last intro bit, which is 0
+                while(readBit(bitPeriod, serial1WireHardwarePtr) == 1) // exit on last intro bit, which is 0
                 {
                     introCount++;
                 }
@@ -231,7 +250,7 @@ void USBLinker(void)
                         {
                             if (i == 0)
                                 serialBuffer[rxlen] = 0; // reset byte for bitwise operations
-                            tmp = readBit(bitPeriod);
+                            tmp = readBit(bitPeriod, serial1WireHardwarePtr);
                             if (tmp == -1) // timeout reached
                             {
                                 timeout = 1;
@@ -244,9 +263,9 @@ void USBLinker(void)
                         }
                     }
 
-                    for (uint8_t i; i < rxlen; i++)
+                    for (uint8_t i = 0; i < rxlen; i++)
                     {
-                        serialWrite(serialPort, serialBuffer[i]);
+                        serialWrite(serialPortIn, serialBuffer[i]);
                     }
                 }
                 LED0_OFF;
@@ -255,3 +274,5 @@ void USBLinker(void)
         }
     }
 }
+
+#endif

@@ -51,6 +51,7 @@
 #include "io/gimbal.h"
 #include "io/rc_controls.h"
 #include "io/serial.h"
+#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -132,8 +133,8 @@ static void cliFlashWrite(char *cmdline);
 static void cliFlashRead(char *cmdline);
 #endif
 
-#ifdef USE_USBLINKER
-static void cliUSBLinker(char *cmdline);
+#ifdef USE_SERIAL_1WIRE
+static void cliUSB1Wire(char *cmdline);
 #endif
 
 // signal that we're in cli mode
@@ -226,8 +227,8 @@ const clicmd_t cmdTable[] = {
 #endif
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
-#ifdef USE_USBLINKER
-    { "usblinker", "flash simonk escs", cliUSBLinker },
+#ifdef USE_SERIAL_1WIRE
+    { "1wire", "1-wire interface to escs", cliUSB1Wire },
 #endif
     { "version", "", cliVersion },
 };
@@ -1652,16 +1653,30 @@ static void cliStatus(char *cmdline)
     printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
 
+#ifdef USE_SERIAL_1WIRE
 
-#ifdef USE_USBLINKER
+void usb1Wire(serialPort_t serialPortIn);
 
-void USBLinker(void);
-
-static void cliUSBLinker(char *cmdline)
+static void cliUSB1Wire(char *cmdline)
 {
-    (void)cmdline;
+    int i;
 
-    USBLinker();
+    if (isEmpty(cmdline)) {
+        cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2");
+        printf("profile %d\r\n", getCurrentProfile());
+        return;
+    } else {
+        i = atoi(cmdline);
+        if (i > 0 && i <= SERIAL_1WIRE_MOTOR_COUNT) {
+            printf("Switching to BlHeli mode on motor port %d\r\n", i);
+        }
+        else {
+            printf("Invalid motor port, the valid range is 1 to %d\r\n", SERIAL_1WIRE_MOTOR_COUNT);
+        }
+    }
+    waitForSerialPortToFinishTransmitting(cliPort);
+
+    serial1Wire(cliPort, i);
 }
 #endif
 
