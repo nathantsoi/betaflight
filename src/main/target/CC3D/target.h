@@ -65,7 +65,7 @@
 
 #define INVERTER
 #define BEEPER
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_VCP
 #define USE_USART1

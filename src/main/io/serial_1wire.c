@@ -43,18 +43,18 @@
 #define BIT_DELAY 68
 
 #if defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
-const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
+static const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
     { GPIOA, Pin_8 },       // PWM9 - OUT1
-    { GPIOA, Pin_11 },      // PWM10 - OUT2
-    { GPIOB, Pin_6, },      // PWM11 - OUT3
-    { GPIOB, Pin_7, },      // PWM12 - OUT4
-    { GPIOB, Pin_8, },      // PWM13 - OUT5
-    { GPIOB, Pin_9, }       // PWM14 - OUT6
+    { GPIOA, Pin_1 },      // PWM10 - OUT2
+    { GPIOB, Pin_6 },      // PWM11 - OUT3
+    { GPIOB, Pin_7 },      // PWM12 - OUT4
+    { GPIOB, Pin_8 },      // PWM13 - OUT5
+    { GPIOB, Pin_9 }       // PWM14 - OUT6
 };
 #endif
 
 #ifdef CC3D
-const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
+static const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
     { GPIOB, Pin_9 },    // S1_OUT
     { GPIOB, Pin_8 },    // S2_OUT
     { GPIOB, Pin_7 },    // S3_OUT
