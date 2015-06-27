@@ -41,6 +41,29 @@ Cleanflight is built using the 4.8 series GCC compiler provided by the [GNU Tool
 The newest "4.9" series compiler produces builds that don't boot on CC3D and Sparky targets (and perhaps others), so it's
 better to use the older 4.8 compiler for the moment.
 
+### Install via Homebrew
+
+Install Homebrew from [brew.sh](https://brew.sh)
+
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+Install ARM GCC compiler
+
+    brew tap PX4/homebrew-px4
+    brew update
+    brew install gcc-arm-none-eabi-48
+
+While you're here, install the stm32flash tool
+
+   brew tap nathantsoi/homebrew-stm32flash
+   brew install stm32flash
+
+And st-link
+
+   brew install st-link
+
+### Or Download Manually
+
 Hit the "all downloads" link on the right side of the GNU Tools for ARM page to view [the older releases][]. Grab the
 Mac installation tarball for the latest version in the 4.8 series (e.g. 4.8-2014-q3-update). Move it somewhere useful 
 such as a `~/development` folder (in your home directory) and double click it to unpack it. You should end up with a 
@@ -113,3 +136,27 @@ Or in the case of CC3D in need of a `obj/cleanflight_CC3D.bin`
 make clean TARGET=CC3D
 make TARGET=CC3D OPBL=yes
 ```
+
+## Flashing
+
+Make sure you've installed the stm32flash tool (see hombrew commands above)
+
+    SERIAL_DEVICE=/dev/ttyxx TARGET=STM32F3DISCOVERY make flash
+
+Or all in one line -- clean, build and flash your target:
+
+    SERIAL_DEVICE=/dev/ttyxx TARGET=STM32F3DISCOVERY bash -c 'make clean && make && make flash'
+
+## Flashing with st-link and debugging
+
+For example, with a STM32F3Discovery board
+
+    brew install openocd --enable_ft2232_libftdi --enable_stlink
+    openocd -f support/stm32f3discovery.cfg
+
+Then in a new terminal
+
+   telnet localhost 4444
+   reset halt
+   flash write_image erase obj/cleanflight_STM32F3DISCOVERY.hex
+   reset
