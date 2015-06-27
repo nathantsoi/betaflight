@@ -23,7 +23,6 @@
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
-#define USE_USBLINKER
 
 #define SERIAL_PORT_COUNT 4
 

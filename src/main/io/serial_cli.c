@@ -193,6 +193,9 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
+#ifdef USE_SERIAL_1WIRE
+    { "1wire", "1-wire interface to escs", cliUSB1Wire },
+#endif
     { "adjrange", "show/set adjustment ranges settings", cliAdjustmentRange },
     { "aux", "show/set aux settings", cliAux },
     { "cmix", "design custom mixer", cliCMix },
@@ -232,9 +235,6 @@ const clicmd_t cmdTable[] = {
 #endif
     { "set", "name=value or blank or * for list", cliSet },
     { "status", "show system status", cliStatus },
-#ifdef USE_SERIAL_1WIRE
-    { "1wire", "1-wire interface to escs", cliUSB1Wire },
-#endif
     { "version", "", cliVersion },
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
@@ -1725,29 +1725,25 @@ static void cliStatus(char *cmdline)
 }
 
 #ifdef USE_SERIAL_1WIRE
-
-void usb1Wire(serialPort_t serialPortIn);
-
 static void cliUSB1Wire(char *cmdline)
 {
     int i;
 
     if (isEmpty(cmdline)) {
-        cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2");
-        printf("profile %d\r\n", getCurrentProfile());
+        cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2\r\n");
         return;
     } else {
         i = atoi(cmdline);
-        if (i > 0 && i <= SERIAL_1WIRE_MOTOR_COUNT) {
+        if (i >= 0 && i <= ESC_COUNT) {
             printf("Switching to BlHeli mode on motor port %d\r\n", i);
         }
         else {
-            printf("Invalid motor port, the valid range is 1 to %d\r\n", SERIAL_1WIRE_MOTOR_COUNT);
+            printf("Invalid motor port, 0 = all or 1 to %d\r\n", ESC_COUNT);
         }
     }
-    waitForSerialPortToFinishTransmitting(cliPort);
-
-    serial1Wire(cliPort, i);
+    StopPwmAllMotors();
+    // -1 means all motors, 0 = motor 1, etc.
+    usb1WirePassthrough(i-1);
 }
 #endif
 

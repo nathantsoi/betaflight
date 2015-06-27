@@ -71,31 +71,31 @@ Re-apply any new defaults as desired.
 
 ## CLI Command Reference
 
-| `Command`        | Description                                    |
-|------------------|------------------------------------------------|
-| `1wire [motor]`  | passthrough 1wire commands to the given port   |
-| `adjrange`       | show/set adjustment ranges settings            |
-| `aux`            | show/set aux settings                          |
-| `cmix`           | design custom mixer                            |
-| `color`          | configure colors                               |
-| `defaults`       | reset to defaults and reboot                   |
-| `dump`           | print configurable settings in a pastable form |
-| `exit`           |                                                |
-| `feature`        | list or -val or val                            |
-| `get`            | get variable value                             |
-| `gpspassthrough` | passthrough gps to serial                      |
-| `help`           |                                                |
-| `led`            | configure leds                                 |
-| `map`            | mapping of rc channel order                    |
-| `mixer`          | mixer name or list                             |
-| `motor`          | get/set motor output value                     |
-| `play_sound`     | index, or none for next                        |
-| `profile`        | index (0 to 2)                                 |
-| `rateprofile`    | index (0 to 2)                                 |
-| `save`           | save and reboot                                |
-| `set`            | name=value or blank or * for list              |
-| `status`         | show system status                             |
-| `version`        |                                                |
+| `Command`        | Description                                           |
+|------------------|-------------------------------------------------------|
+| `1wire [motor]`  | passthrough 1wire to motor: 0 = all, 1 = motor 1, etc.|
+| `adjrange`       | show/set adjustment ranges settings                   |
+| `aux`            | show/set aux settings                                 |
+| `cmix`           | design custom mixer                                   |
+| `color`          | configure colors                                      |
+| `defaults`       | reset to defaults and reboot                          |
+| `dump`           | print configurable settings in a pastable form        |
+| `exit`           |                                                       |
+| `feature`        | list or -val or val                                   |
+| `get`            | get variable value                                    |
+| `gpspassthrough` | passthrough gps to serial                             |
+| `help`           |                                                       |
+| `led`            | configure leds                                        |
+| `map`            | mapping of rc channel order                           |
+| `mixer`          | mixer name or list                                    |
+| `motor`          | get/set motor output value                            |
+| `play_sound`     | index, or none for next                               |
+| `profile`        | index (0 to 2)                                        |
+| `rateprofile`    | index (0 to 2)                                        |
+| `save`           | save and reboot                                       |
+| `set`            | name=value or blank or * for list                     |
+| `status`         | show system status                                    |
+| `version`        |                                                       |
 
 ## CLI Variable Reference
 

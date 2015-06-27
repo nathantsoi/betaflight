@@ -13,13 +13,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
+ *  by Nathan Tsoi <nathan@vertile.com>
  */
 
 #pragma once
 
-typedef struct {
-    GPIO_TypeDef *gpio;
-    uint32_t pin;
-} serial1WireHardware_t;
+#ifdef USE_SERIAL_1WIRE
 
-void serial1Wire(serialPort_t *serialPortIn, uint8_t motorIndex);
+typedef struct {
+  uint32_t periph;
+  GPIO_TypeDef* gpio;
+  uint16_t pin;
+} escHardware_t;
+
+void usb1WirePassthrough(int8_t escIndex);
+#endif

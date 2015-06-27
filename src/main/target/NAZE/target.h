@@ -175,9 +175,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_1WIRE
-#define SERIAL_1WIRE_MOTOR_COUNT 6
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA

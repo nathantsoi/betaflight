@@ -65,7 +65,7 @@
 
 #define INVERTER
 #define BEEPER
-//#define DISPLAY
+#define DISPLAY
 
 #define USE_VCP
 #define USE_USART1
@@ -117,7 +117,11 @@
 #define USE_CLI
 
 #define USE_SERIAL_1WIRE
-#define SERIAL_1WIRE_MOTOR_COUNT 6
+// Main port, plugin a UART/USB converter
+#define S1W_TX_GPIO         GPIOA
+#define S1W_TX_PIN          GPIO_Pin_9
+#define S1W_RX_GPIO         GPIOA
+#define S1W_RX_PIN          GPIO_Pin_10
 
 #if defined(OPBL)
 // disabled some features for OPBL build due to code size.

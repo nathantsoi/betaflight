@@ -13,266 +13,268 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
+ *  by Nathan Tsoi <nathan@vertile.com>
  */
 
-// Copy-pasted from simonk
-// All transmissions have a leader of 23 1-bits followed by 1 0-bit.
-// Bit encoding starts at the least significant bit and is 8 bits wide.
-// 1-bits are encoded as 64.0us high, 72.8us low (135.8us total).
-// 0-bits are encoded as 27.8us high, 34.5us low, 34.4us high, 37.9 low
-// (134.6us total)
-// End of encoding adds 34.0us high, then return to input mode.
-// The last 0-bit low time is 32.6us instead of 37.9us, for some reason.
-
 #include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
-#include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/serial.h"
-#include "io/serial.h"
-#include "io/serial_1wire.h"
-
 #ifdef USE_SERIAL_1WIRE
 
-#define BIT_DELAY_HALF 34
-#define BIT_DELAY 68
+#include "drivers/gpio.h"
+#include "drivers/system.h"
+#include "drivers/light_led.h"
+#include "io/serial_1wire.h"
 
-#if defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
-static const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
-    { GPIOA, Pin_8 },       // PWM9 - OUT1
-    { GPIOA, Pin_1 },      // PWM10 - OUT2
-    { GPIOB, Pin_6 },      // PWM11 - OUT3
-    { GPIOB, Pin_7 },      // PWM12 - OUT4
-    { GPIOB, Pin_8 },      // PWM13 - OUT5
-    { GPIOB, Pin_9 }       // PWM14 - OUT6
+// for a baud of 19200 we get 52 microseconds/bit
+// not sure if we need this at all
+#define BIT_DELAY 52
+#define BIT_DELAY_HALF 26
+
+// Figure out esc clocks and pins
+#if defined(STM32F3DISCOVERY)
+const escHardware_t escHardware[ESC_COUNT] = {
+    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_12 },
+    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_13 },
+    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_14 },
+    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_15 },
+    { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_1 },
+    { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_2 }
 };
 #endif
 
-#ifdef CC3D
-static const serial1WireHardware_t serial1WireOut[SERIAL_1WIRE_MOTOR_COUNT] = {
-    { GPIOB, Pin_9 },    // S1_OUT
-    { GPIOB, Pin_8 },    // S2_OUT
-    { GPIOB, Pin_7 },    // S3_OUT
-    { GPIOA, Pin_8 },    // S4_OUT
-    { GPIOB, Pin_4 },    // S5_OUT - GPIO_PartialRemap_TIM3 - LED Strip
-    { GPIOA, Pin_2 }     // S6_OUT
-};
-#endif
+static void gpio_enable_clock(uint32_t Periph_GPIOx);
+static void gpio_set_mode(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t mode);
 
-volatile uint8_t serialBuffer[255];
+// Setup some debugging LEDs
+// Leds on STM32F3DISCOVERY, note: inverted output
+// Top Left LD4, PE8 (blue)-- from programmer (RX)
+#define LED_PRGMR_RX      GPIOE, GPIO_Pin_8
+// Top Right LD5, PE10 (orange) -- to programmer (TX)
+#define LED_PRGMR_TX      GPIOE, GPIO_Pin_10
+// Bottom Left (orange) LD8, PE14 -- from esc (RX)
+#define LED_ESC_RX        GPIOE, GPIO_Pin_14
+// Bottom Right (blue) LD9, PE12 -- to esc (TX)
+#define LED_ESC_TX        GPIOE, GPIO_Pin_12
+// Left (green) LD6, PE15 -- esc input (rx) mode
+#define LED_ESC_MODE_RX   GPIOE, GPIO_Pin_15
+// Right (green) LD7, PE11 -- esc output (tx) mode
+#define LED_ESC_MODE_TX   GPIOE, GPIO_Pin_11
 
-void gpio_config_out(const serial1WireHardware_t *serial1WireHardwarePtr)
+static void ledSetState(GPIO_TypeDef *GPIOx, uint16_t pin, BitAction on)
 {
-    gpio_config_t cfg;
-
-    cfg.mode = Mode_Out_PP;
-    cfg.pin = serial1WireHardwarePtr->pin;
-    cfg.speed = Speed_2MHz;
-
-    gpioInit(serial1WireHardwarePtr->gpio, &cfg);
-}
-
-void gpio_config_in(const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    gpio_config_t cfg;
-
-    cfg.mode = Mode_IPU;
-    cfg.pin = serial1WireHardwarePtr->pin;
-    cfg.speed = Speed_2MHz;
-
-    gpioInit(serial1WireHardwarePtr->gpio, &cfg);
-}
-
-void sendDigital1(const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY);
-    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY);
-}
-
-void sendDigital0(const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY_HALF);
-    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY_HALF);
-    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY_HALF);
-    digitalLo(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY_HALF);
-}
-
-void sendByte(uint8_t byte, const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    for(uint8_t i = 0; i < 8; i++)
-    {
-        if(byte & (1 << i))
-        {
-            sendDigital1(serial1WireHardwarePtr);
-        } else {
-            sendDigital0(serial1WireHardwarePtr);
-        }
-    }
-}
-
-void sendBuf(uint8_t txlen, const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    gpio_config_out(serial1WireHardwarePtr);
-
-    // send intro message
-    for(uint8_t i = 0; i < 23; i++)
-    {
-        sendDigital1(serial1WireHardwarePtr);
-    }
-    sendDigital0(serial1WireHardwarePtr);
-
-    for(uint8_t i = 0; i < txlen; i++)
-    {
-        sendByte(serialBuffer[i], serial1WireHardwarePtr);
-    }
-
-    // send trailing message
-    digitalHi(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
-    delayMicroseconds(BIT_DELAY_HALF);
-
-    gpio_config_in(serial1WireHardwarePtr);
-}
-
-int8_t readBit(uint32_t bitPeriod, const serial1WireHardware_t *serial1WireHardwarePtr)
-{
-    uint32_t startTime = micros();
-    while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
-        if (micros() > startTime + 250)
-            return -1;
-    while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
-        if (micros() > startTime + 250)
-            return -1;
-    uint32_t endTime = micros();
-
-    if((endTime - startTime) < (bitPeriod / 1.5)) // short pulses
-    {
-        while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait for second half of bit
-            if (micros() > startTime + 250)
-                return -1;
-        while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin))
-            if (micros() > startTime + 250)
-                return -1;
-        return 0;
-    }
-    return 1;
-}
-
-void serial1Wire(serialPort_t *serialPortIn, uint8_t motorIndex)
-{
+#if defined(STM32F3DISCOVERY)
+  GPIO_WriteBit(GPIOx, pin, on);
+#else
+  if (on)
+    LED0_ON;
+  else
     LED0_OFF;
-#ifdef LED1
-    LED1_OFF;
 #endif
-    const serial1WireHardware_t *serial1WireHardwarePtr = &serial1WireOut[motorIndex];
+}
 
-    gpio_config_in(serial1WireHardwarePtr);
-    uint16_t lastPin = 0;
-
-    while(1)
-    {
-        if (serialTotalBytesWaiting(serialPortIn))
-        {
-            LED1_ON;
-            uint16_t rxlen = 0;
-            while(serialTotalBytesWaiting(serialPortIn))
-            {
-                serialBuffer[rxlen++] = serialRead(serialPortIn);
-                delay(2);
-
-                if (rxlen == 255)
-                {
-                    while(serialTotalBytesWaiting(serialPortIn))
-                        serialRead(serialPortIn);
-                    break;
-                }
-            }
-#ifdef LED1
-            LED1_OFF;
+static void ledInitDebug(void)
+{
+#if defined(STM32F3DISCOVERY)
+  GPIO_DeInit(GPIOE);
+  gpio_enable_clock(RCC_AHBPeriph_GPIOE);
+  gpio_set_mode(GPIOE, GPIO_Pin_8|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_14|GPIO_Pin_15, Mode_Out_PP);
+  // Inverted LEDs
+  ledSetState(GPIOE, GPIO_Pin_8|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_14|GPIO_Pin_15, Bit_RESET);
 #endif
-            sendBuf(rxlen, serial1WireHardwarePtr);
-            lastPin = 1;
-        } else {
-            // read from pin
-            uint16_t curPin = digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin);
+  return;
+}
 
-            if ((lastPin == 0) && (curPin != 0)) // pin went high from low
-            {
-                LED0_ON;
-                // get sync time from header
-                volatile uint32_t startTime, endTime, bitPeriod;
 
-                startTime = micros();
+static void disable_hardware_uart() {
+  // Disable all interrupts
+  __disable_irq();
+}
 
-                // get starting time at next low-high transition
-                while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
-                    if (micros() > startTime + 250)
-                                break;
-                while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
-                    if (micros() > startTime + 250)
-                                break;
-                startTime = micros();
-
-                // get ending time at next low-high transition
-                while(digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go low
-                    if (micros() > startTime + 250)
-                                break;
-                while(!digitalIn(serial1WireHardwarePtr->gpio, serial1WireHardwarePtr->pin)) // wait to go high
-                    if (micros() > startTime + 250)
-                                break;
-                endTime = micros();
-
-                bitPeriod = endTime - startTime; // doesn't include overflow case
-
-                uint8_t introCount = 0;
-                while(readBit(bitPeriod, serial1WireHardwarePtr) == 1) // exit on last intro bit, which is 0
-                {
-                    introCount++;
-                }
-                if (introCount > 10) // decent threshold
-                {
-                    uint8_t rxlen = 0;
-                    int8_t tmp;
-                    uint8_t timeout = 0;
-                    while(timeout == 0)
-                    {
-                        for (int8_t i = 0; i < 8; i++)
-                        {
-                            if (i == 0)
-                                serialBuffer[rxlen] = 0; // reset byte for bitwise operations
-                            tmp = readBit(bitPeriod, serial1WireHardwarePtr);
-                            if (tmp == -1) // timeout reached
-                            {
-                                timeout = 1;
-                                break;
-                            } else {
-                                serialBuffer[rxlen] |=  (tmp << i); // LSB first
-                                if (i == 7)
-                                    rxlen++;
-                            }
-                        }
-                    }
-
-                    for (uint8_t i = 0; i < rxlen; i++)
-                    {
-                        serialWrite(serialPortIn, serialBuffer[i]);
-                    }
-                }
-                LED0_OFF;
-            }
-            lastPin = curPin;
-        }
+static void deinit_esc_gpio(int8_t escIndex) {
+  int i = 0;
+  if (escIndex == -1) {
+    for (i = 0; i < ESC_COUNT; i++) {
+      GPIO_DeInit(escHardware[i].gpio);
     }
+  }
+  else {
+    GPIO_DeInit(escHardware[escIndex].gpio);
+  }
+}
+
+static void deinit_gpio(int8_t escIndex) {
+  GPIO_DeInit(S1W_TX_GPIO);
+  GPIO_DeInit(S1W_RX_GPIO);
+  deinit_esc_gpio(escIndex);
+}
+
+// set output if output = 1, otherwise input
+static void gpio_enable_clock(uint32_t Periph_GPIOx) {
+  // Enable the clock
+#if defined(STM32F303xC)
+  RCC_AHBPeriphClockCmd(Periph_GPIOx, ENABLE);
+#else
+  RCC_APB2PeriphClockCmd(Periph_GPIOx, ENABLE);
+#endif
+}
+
+static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
+  gpio_config_t cfg;
+  cfg.pin = pin;
+  cfg.mode = mode;
+  cfg.speed = Speed_2MHz;
+  gpioInit(gpio, &cfg);
+}
+
+static void gpio_enable_clock_escs(int8_t escIndex) {
+  int i = 0;
+  if (escIndex == -1) {
+    for (i = 0; i < ESC_COUNT; i++) {
+      gpio_enable_clock(escHardware[i].periph);
+    }
+  }
+  else {
+    gpio_enable_clock(escHardware[escIndex].periph);
+  }
+}
+
+// set output if output = 1, otherwise input
+static void gpio_set_mode_escs(int8_t escIndex, uint8_t mode) {
+  int i = 0;
+  ledSetState(LED_ESC_MODE_TX, mode != Mode_IPU);
+  ledSetState(LED_ESC_MODE_RX, mode == Mode_IPU);
+  if (escIndex == -1) {
+    escIndex = 0;
+    // only configure all escs if going into Mode_Out_PP
+    if (mode == Mode_Out_PP) {
+      for (i = 0; i < ESC_COUNT; i++) {
+        gpio_set_mode(escHardware[i].gpio, escHardware[i].pin, mode);
+      }
+      return;
+    }
+  }
+  gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, mode);
+}
+
+// Configure all GPIOs
+static void init_all_gpio(int8_t escIndex) {
+  // Programmer RX
+  gpio_enable_clock(S1W_RX_PERIPH);
+  gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+  // Programmer TX
+  gpio_enable_clock(S1W_TX_PERIPH);
+  gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
+  // Escs
+  gpio_enable_clock_escs(escIndex);
+  // Escs pins start in input mode, pullup is always on
+  gpio_set_mode_escs(escIndex, Mode_IPU);
+}
+
+// Reset relevant bits on GPIOs to their initial states
+static void reset_all_gpio(int8_t escIndex) {
+  int i = 0;
+  GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
+  if (escIndex == -1) {
+    for (i = 0; i < ESC_COUNT; i++) {
+      GPIO_ResetBits(escHardware[i].gpio, escHardware[i].pin);
+    }
+  } else {
+    GPIO_ResetBits(escHardware[escIndex].gpio, escHardware[escIndex].pin);
+  }
+}
+
+static uint8_t rxHi() {
+  uint16_t val = 0;
+  val = (GPIO_ReadInputDataBit(S1W_RX_GPIO, S1W_RX_PIN));
+  ledSetState(LED_PRGMR_RX, val == Bit_RESET);
+  return val;
+}
+
+static void txSet(BitAction val) {
+  GPIO_WriteBit(S1W_TX_GPIO, S1W_TX_PIN, val);
+  // low == data
+  ledSetState(LED_PRGMR_TX, val == Bit_RESET);
+}
+
+static uint8_t escHi(int8_t escIndex) {
+  uint16_t val = 0;
+  // we can only read / passthrough 1 escs, lets pass the first one in "all" mode
+  if (escIndex == -1) { escIndex = 1; }
+  // inverted schmitt trigger on the input vs. the non-inverted schmitt trigger on the avr
+  // invert the input to get the true edge direction
+  // bit reset (0) indicates a true rising edge
+  val = (GPIO_ReadInputDataBit(escHardware[escIndex].gpio, escHardware[escIndex].pin));
+  ledSetState(LED_ESC_RX, val == Bit_RESET);
+  return val;
+}
+
+void escSet(int8_t escIndex, BitAction val) {
+  int i = 0;
+  // Write all esc pins
+  if (escIndex == -1) {
+    for (i = 0; i < ESC_COUNT; i++) {
+      GPIO_WriteBit(escHardware[i].gpio, escHardware[i].pin, val);
+    }
+  }
+  // Write the specified pin
+  else {
+    GPIO_WriteBit(escHardware[escIndex].gpio, escHardware[i].pin, val);
+  }
+  // low == data
+  ledSetState(LED_ESC_TX, val == Bit_RESET);
+}
+
+// This method translates 2 wires (a tx and rx line) to 1 wire, by letting the
+// RX line control when data should be read or written from the single line
+void usb1WirePassthrough(int8_t escIndex)
+{
+  // Reset all GPIO
+  deinit_gpio(escIndex);
+  // Take control of the LEDs
+  ledInitDebug();
+  //delay(1000);
+  disable_hardware_uart();
+  init_all_gpio(escIndex);
+  // reset all the pins, 1wire goes into input mode, pullup on
+  reset_all_gpio(escIndex);
+
+  // set the programmer high
+  txSet(Bit_SET);
+
+  // Wait for programmer to go from 1 -> 0 indicating incoming data
+  while(rxHi());
+  while(1) {
+    // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
+    // Setup escIndex pin to send data, pullup is the default
+    gpio_set_mode_escs(escIndex, Mode_Out_PP);
+    // Write the first bit
+    escSet(escIndex, Bit_RESET);
+    // Echo on the programmer tx line
+    txSet(Bit_RESET);
+
+    // Wait for programmer to go 0 -> 1
+    while(!rxHi());
+
+    // Programmer is high, end of bit
+    // Echo to the esc
+    escSet(escIndex, Bit_SET);
+    // Listen to the escIndex, input mode, pullup resistor is on
+    gpio_set_mode_escs(escIndex, Mode_IPU);
+
+    // Listen to the escIndex while there is no data from the programmer
+    while (rxHi()) {
+      if (escHi(escIndex)) {
+        txSet(Bit_SET);
+      }
+      else {
+        txSet(Bit_RESET);
+      }
+    }
+  }
 }
 
 #endif
