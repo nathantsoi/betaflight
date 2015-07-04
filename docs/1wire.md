@@ -1,6 +1,6 @@
 # 1-wire passthrough esc programming
 
-Currently supported on the STM32F3DISCOVERY.
+Currently supported on the STM32F3DISCOVERY, NAZE (and variants) and CC3D.
 
 The general idea is to connect a UART/USB converter to your computer and the UART pins defined in `target.h`, and a ground of course, to program your ESCs in place.
 

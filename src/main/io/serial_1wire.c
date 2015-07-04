@@ -34,8 +34,9 @@
 #define BIT_DELAY 52
 #define BIT_DELAY_HALF 26
 
-// Figure out esc clocks and pins
-#if defined(STM32F3DISCOVERY)
+// Figure out esc clocks and pins, extrapolated from timer.c
+// Periphs could be pulled progmatically... but I'll leave that for another exercise
+#if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
 const escHardware_t escHardware[ESC_COUNT] = {
     { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_12 },
     { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_13 },
@@ -43,6 +44,24 @@ const escHardware_t escHardware[ESC_COUNT] = {
     { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_15 },
     { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_1 },
     { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_2 }
+};
+#elif defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
+const escHardware_t escHardware[ESC_COUNT] = {
+    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_8 },
+    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_11 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_6 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_7 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_8 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_9 }
+};
+#elif CC3D
+const escHardware_t escHardware[ESC_COUNT] = {
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_9 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_8 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_7 },
+    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_8 },
+    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_4 },
+    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_2 }
 };
 #endif
 
@@ -241,6 +260,7 @@ void usb1WirePassthrough(int8_t escIndex)
   init_all_gpio(escIndex);
   // reset all the pins, 1wire goes into input mode, pullup on
   reset_all_gpio(escIndex);
+  // turn on the ESC now
 
   // set the programmer high
   txSet(Bit_SET);
