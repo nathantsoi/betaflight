@@ -241,7 +241,7 @@ void escSet(int8_t escIndex, BitAction val) {
   }
   // Write the specified pin
   else {
-    GPIO_WriteBit(escHardware[escIndex].gpio, escHardware[i].pin, val);
+    GPIO_WriteBit(escHardware[escIndex].gpio, escHardware[escIndex].pin, val);
   }
   // low == data
   ledSetState(LED_ESC_TX, val == Bit_RESET);
