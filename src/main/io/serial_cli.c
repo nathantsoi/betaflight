@@ -1749,6 +1749,7 @@ static void cliUSB1Wire(char *cmdline)
             printf("Invalid motor port, 0 = all or 1 to %d\r\n", ESC_COUNT);
         }
     }
+    UNUSED(cmdline);
     StopPwmAllMotors();
     // -1 means all motors, 0 = motor 1, etc.
     usb1WirePassthrough(i-1);
