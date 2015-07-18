@@ -23,10 +23,10 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
+#define LED0_PIN    Pin_3 // PB3 (GREEN LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
 #define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
+#define LED1_PIN    Pin_4 // PB4 (RED LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
 #define BEEP_GPIO   GPIOA
