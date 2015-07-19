@@ -99,51 +99,43 @@ static void gpio_enable_clock(uint32_t Periph_GPIOx) {
 #endif
 }
 
-//#ifdef STM32F303xC
-//#define MODE_OFFSET 0
-//#define PUPD_OFFSET 2
-//#define OUTPUT_OFFSET 4
-//
-//#define MODE_MASK ((1|2) << MODE_OFFSET)
-//#define PUPD_MASK ((1|2) << PUPD_OFFSET)
-//#define OUTPUT_MASK ((1|2) << OUTPUT_OFFSET)
+#ifdef STM32F10X
+void gpioInitOne(uint16_t escIndex, GPIO_Mode mode)
+{
+  GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
+  uint32_t pinpos = escHardware[escIndex].pinpos;
+  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+  __IO uint32_t *cr = &gpio->CRL + (pinpos / 8);
+  // mask out extra bits from pinmode, leaving just CNF+MODE
+  uint32_t currentmode = mode & 0x0F;
+  // offset to CNF and MODE portions of CRx register
+  uint32_t shift = (pinpos % 8) * 4;
+  // Read out current CRx value
+  uint32_t tmp = *cr;
+  // if we're in output mode, add speed too.
+  if (mode & 0x10)
+    currentmode |= Speed_10MHz;
+  // Mask out 4 bits
+  tmp &= ~(0xF << shift);
+  // apply current pinmode
+  tmp |= currentmode << shift;
+  *cr = tmp;
+  // Special handling for IPD/IPU
+  if (mode == Mode_IPD) {
+    gpio->ODR &= ~(1U << pinpos);
+  } else if (mode == Mode_IPU) {
+    gpio->ODR |= (1U << pinpos);
+  }
+}
+#endif
+
 static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
   gpio_config_t cfg;
   cfg.pin = pin;
   cfg.mode = mode;
   cfg.speed = Speed_10MHz;
   gpioInit(gpio, &cfg);
-//  GPIO_InitTypeDef GPIO_InitStructure;
-//  GPIO_InitStructure.GPIO_Pin =  pin;
-//  GPIO_InitStructure.GPIO_Mode = (mode & MODE_MASK) >> MODE_OFFSET;
-//  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-//  GPIO_InitStructure.GPIO_OType = (mode & OUTPUT_MASK) >> OUTPUT_OFFSET;
-//  GPIO_InitStructure.GPIO_PuPd = (mode & PUPD_MASK) >> PUPD_OFFSET;
-//  GPIO_Init(gpio, &GPIO_InitStructure);
 }
-//#endif
-
-#ifdef STM32F10X
-// Some variables for fast gpio input/output mode toggling
-static __IO uint32_t* cr_register;
-static __IO uint32_t cr_mode_original, cr_mode_in, cr_mode_out;
-// taken from stm32f10x_gpio.c -> GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
-// Call me once on 1wire init, then use cr_in and cr_out to set the mode
-// see table 20 on page 161 of the stm32f103 reference manual for details
-static void init_cr(GPIO_TypeDef* gpio, uint32_t pinpos) {
-  cr_register = (pinpos < 8) ? &(gpio->CRL) : &(gpio->CRH);
-  cr_mode_original = *cr_register;
-  pinpos = pinpos % 8;
-  cr_mode_in = cr_mode_out = *cr_register;
-  // clear the 4bit cr register for the pinpos
-  cr_mode_in &= ~((uint32_t)0x0F << (pinpos * 4));
-  cr_mode_out &= ~((uint32_t)0x0F << (pinpos * 4));
-  // input pull up, gpio->odr = 1 (pull down) => 0b1000 = 0x8
-  cr_mode_in |= ((uint32_t)0x08 << (pinpos * 4));
-  // output mode, general purpose push-pull, max speed 10Mhz => 0b0001 = 0x1
-  cr_mode_out |= ((uint32_t)0x01 << (pinpos * 4));
-}
-#endif
 
 #define disable_hardware_uart  __disable_irq()
 #define enable_hardware_uart   __enable_irq()
@@ -160,14 +152,8 @@ static void init_cr(GPIO_TypeDef* gpio, uint32_t pinpos) {
 #endif
 
 #ifdef STM32F10X
-// For atomic bit set/reset, the ODR bits can be individually set and cleared by writing to the GPIOx_BSRR register (x = A .. G).
-//  input pull up mode, GPIOx_BSRR must be set to 1
-//  output push-pull mode, GPIOx_BSRR can be 0 or 1
-// $$$ These may need to execute in reverse order (pull up BSRR then switch the CR)?
-#define ESC_INPUT(escIndex)    (*cr_register = cr_mode_in); \
-                               (escHardware[escIndex].gpio->BSRR |= (0x01 << escHardware[escIndex].pinpos))
-#define ESC_OUTPUT(escIndex)   *cr_register = cr_mode_out
-#define restore_esc_mode       *cr_register = cr_mode_original
+#define ESC_INPUT(escIndex)    gpioInitOne(escIndex, Mode_IPU)
+#define ESC_OUTPUT(escIndex)   gpioInitOne(escIndex, Mode_Out_PP)
 #endif
 
 #if defined(STM32F3DISCOVERY)
@@ -210,9 +196,6 @@ void usb1WirePassthrough(int8_t escIndex)
   gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
   gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
   gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
-#ifdef STM32F10X
-  init_cr(escHardware[escIndex].gpio, escHardware[escIndex].pinpos);
-#endif
   // hey user, turn on your ESC now
 
   // Wait for programmer to go from 1 -> 0 indicating incoming data
@@ -244,10 +227,6 @@ void usb1WirePassthrough(int8_t escIndex)
           gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
           // Enable Hardware UART
           enable_hardware_uart;
-#ifdef STM32F10X
-          // Restore CR(L/H) to its original mode
-          restore_esc_mode;
-#endif
           return;
        }
     }
