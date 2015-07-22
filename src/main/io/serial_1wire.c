@@ -100,31 +100,37 @@ static void gpio_enable_clock(uint32_t Periph_GPIOx) {
 }
 
 #ifdef STM32F10X
-void gpioInitOne(uint16_t escIndex, GPIO_Mode mode)
+static volatile uint32_t original_cr_mask, in_cr_mask, out_cr_mask;
+static __IO uint32_t *cr;
+static void gpioPrepVars(uint16_t escIndex)
 {
   GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
   uint32_t pinpos = escHardware[escIndex].pinpos;
-  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
-  __IO uint32_t *cr = &gpio->CRL + (pinpos / 8);
   // mask out extra bits from pinmode, leaving just CNF+MODE
-  uint32_t currentmode = mode & 0x0F;
+  uint32_t inmode = Mode_IPU & 0x0F;
+  uint32_t outmode = (Mode_Out_PP & 0x0F) | Speed_10MHz;
+  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+  cr = &gpio->CRL + (pinpos / 8);
   // offset to CNF and MODE portions of CRx register
   uint32_t shift = (pinpos % 8) * 4;
   // Read out current CRx value
-  uint32_t tmp = *cr;
-  // if we're in output mode, add speed too.
-  if (mode & 0x10)
-    currentmode |= Speed_10MHz;
+  original_cr_mask = in_cr_mask = out_cr_mask = *cr;
   // Mask out 4 bits
-  tmp &= ~(0xF << shift);
-  // apply current pinmode
-  tmp |= currentmode << shift;
-  *cr = tmp;
-  // Special handling for IPD/IPU
-  if (mode == Mode_IPD) {
-    gpio->ODR &= ~(1U << pinpos);
-  } else if (mode == Mode_IPU) {
-    gpio->ODR |= (1U << pinpos);
+  in_cr_mask &= ~(0xF << shift);
+  out_cr_mask &= ~(0xF << shift);
+  // save current pinmode
+  in_cr_mask |= inmode << shift;
+  out_cr_mask |= outmode << shift;
+}
+
+static void gpioSetOne(uint16_t escIndex, GPIO_Mode mode) {
+  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+  if (mode == Mode_IPU) {
+    *cr = in_cr_mask;
+    escHardware[escIndex].gpio->ODR |= (1U << escHardware[escIndex].pinpos);
+  }
+  else {
+    *cr = out_cr_mask;
   }
 }
 #endif
@@ -152,8 +158,8 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
 #endif
 
 #ifdef STM32F10X
-#define ESC_INPUT(escIndex)    gpioInitOne(escIndex, Mode_IPU)
-#define ESC_OUTPUT(escIndex)   gpioInitOne(escIndex, Mode_Out_PP)
+#define ESC_INPUT(escIndex)    gpioSetOne(escIndex, Mode_IPU)
+#define ESC_OUTPUT(escIndex)   gpioSetOne(escIndex, Mode_Out_PP)
 #endif
 
 #if defined(STM32F3DISCOVERY)
@@ -198,10 +204,14 @@ void usb1WirePassthrough(int8_t escIndex)
   gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
   // hey user, turn on your ESC now
 
+#ifdef STM32F10X
+  // reset our gpio register pointers and bitmask values
+  gpioPrepVars(escIndex);
+#endif
+
   // Wait for programmer to go from 1 -> 0 indicating incoming data
   while(RX_HI);
-  while(1)
-  {
+  while(1) {
     // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
     // Setup escIndex pin to send data, pullup is the default
     ESC_OUTPUT(escIndex);
@@ -214,21 +224,22 @@ void usb1WirePassthrough(int8_t escIndex)
     TX_LED_ON;
     // Wait for programmer to go 0 -> 1
     uint32_t ct=3000;
-    while(!RX_HI)
-    {
-       ct--;
-       if (ct==0)
-       {
-          // Reset ESC GPIO -- https://github.com/nathantsoi/stm32-serial-1wire-passthrough/issues/2#issuecomment-119400845
-          //GPIO_DeInit(escHardware[escIndex].gpio);
-          // Programmer RX
-          //gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
-          // Programmer TX
-          gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-          // Enable Hardware UART
-          enable_hardware_uart;
-          return;
-       }
+    while(!RX_HI) {
+      ct--;
+      if (ct==0) {
+        // Reset ESC GPIO -- https://github.com/nathantsoi/stm32-serial-1wire-passthrough/issues/2#issuecomment-119400845
+        //GPIO_DeInit(escHardware[escIndex].gpio);
+        // Programmer RX
+        //gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+        // Programmer TX
+        gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
+#ifdef STM32F10X
+        *cr = original_cr_mask;
+#endif
+        // Enable Hardware UART
+        enable_hardware_uart;
+        return;
+      }
     }
     // Programmer is high, end of bit
     // Echo to the esc
@@ -237,15 +248,12 @@ void usb1WirePassthrough(int8_t escIndex)
     ESC_INPUT(escIndex);
     TX_LED_OFF;
     // Listen to the escIndex while there is no data from the programmer
-    while (RX_HI)
-    {
-      if (ESC_HI(escIndex))
-      {
+    while (RX_HI) {
+      if (ESC_HI(escIndex)) {
         TX_SET_HIGH;
         RX_LED_OFF;
       }
-      else
-      {
+      else {
         TX_SET_LO;
         RX_LED_ON;
       }
