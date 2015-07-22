@@ -1,40 +1,57 @@
 # 1-wire passthrough esc programming
 
-Currently supported on the STM32F3DISCOVERY, NAZE (and variants) and CC3D.
+Currently supported on the STM32F3DISCOVERY, NAZE32 (including clones such as the FLIP32) and CC3D.
 
-The general idea is to connect a UART/USB converter to your computer and the UART pins defined in `target.h`, and a ground of course, to program your ESCs in place.
+## Wiring
 
-It should be possible on boards with built in UART/USB converters (and maybe VCPs) to avoid using the external UART adapter.
+  - For the NAZE, no external wiring is necessary. Simply plugin the board via USB cable.
 
-## Configuration
+  - For the CC3D, connect [a USB to UART adapter](http://bit.ly/cf-cp2102) to the main port. If you need one, I prefer the [CP2102](http://bit.ly/cf-cp2102) as it is cheap and [the driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) is readily available.
+
+  - In the case that your board does not power on fully without a battery attached, it is OK to attach the battery before following the steps below. However, it may not be necessary in all cases.
+
+## Usage
+
+  - Plug in the USB cable and connect to your board with the CleanFlight configurator.
+
+  - Open the CLI tab, then run: `1wire <esc index>`
+
+    E.g. to connect to the ESC on your flight controller's port #1, run the command:
+
+    ```
+    1wire 1
+    ```
+
+  - Click "Disconnect" in the CleanFlight configurator. Do not power down your board.
+
+    - Note, in the future it may be possible to configure your ESCs directly in CleanFlight.
+
+  - Open the BlHeli Suite.
+
+  - Ensure you have selected the correct Atmel or SILABS "(USB/Com)" option under the "Select ATMEL / SILABS Interface" menu option.
+
+  - Ensure you have the correct port selected.
+
+    - On the NAZE, this port will be the same COM port used by the CleanFlight configurator.
+
+    - On the CC3D, this port will be your USB to UART serial adapter.
+
+  - Click "Connect" and wait for the connection to complete. If you get a COM error, hit connect again. It will probably work.
+
+  - Click "Read Setup"
+
+  - Use BlHeli suite as normal.
+
+  - When you're finished with one ESC, click "Disconnect" then power down the board. E.g. remove the flight battery and unplug the USB cable. Then repeat the whole process for the next ESC
+
+    - In the future, powering down the board can be avoided and all ESCs can be configured by CleanFlight. I'll be working on this next...
+
+## Implementing and Configuring targets
 
 The following parameters can be used to enable and configure this in the related target.h file:
 
     USE_SERIAL_1WIRE              Enables the 1wire code, defined in target.h
 
-## Usage
-
-  - Start the board normally and connect to the CLI, then use the `1wire` command followed with the ESC you wish to program.
-
-    ie. to connect to the esc on your flight controller's port #2:
-
-    ```
-    1wire 2
-    ```
-
-    TODO: `1wire 0` to write all escs at once, read from esc 1
-
-  - Attach your 1-wire or 4w programmer (made via the BlHeli suite) to the pin specified in the board documentation.
-
-    ie. CC3D boards should have the PWM output (motor out) pin 6 attached to the 1-wire line from the Arduino and the ground line from the Arduino attached to any ground pin on the CC3D
-
-  - Open the BlHeli Suite
-
-  - Pick the BlHeli Bootloader (USB/Com) option
-
-  - Use BlHeli suite as normal
-
-## Implementing
 
   - For new targets
 
@@ -57,14 +74,21 @@ The following parameters can be used to enable and configure this in the related
 
        ```
        // Define your esc hardware
+       #if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
        const escHardware_t escHardware[ESC_COUNT] = {
-           { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_12 },
-           { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_13 },
-           { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_14 },
-           { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_15 },
-           { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_1 },
-           { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_2 }
+         { GPIOD, 12 },
+         { GPIOD, 13 },
+         { GPIOD, 14 },
+         { GPIOD, 15 },
+         { GPIOA, 1 },
+         { GPIOA, 2 }
        };
        ```
+## Development Notes
 
-       - it might be possible to pull this from the timer hardware, but I couldn't find the periphs...
+On the STM32F3DISCOVERY, an external pullup on the ESC line may be necessary. I needed a 3v, 4.7k pullup.
+
+## Todo
+
+Implement the BlHeli bootloader configuration protocol in the CleanFlight GUI
+
