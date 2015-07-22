@@ -34,6 +34,13 @@ initLeds(void)
             .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
         },
 #endif
+#ifdef LED2
+
+        {
+            .gpio = LED2_GPIO,
+            .cfg = { LED2_PIN, Mode_Out_PP, Speed_2MHz }
+        },
+#endif
     }
 
     uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);

@@ -23,10 +23,10 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
+#define LED0_PIN    Pin_3 // PB3 (GREEN LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
 #define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
+#define LED1_PIN    Pin_4 // PB4 (RED LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
 #define BEEP_GPIO   GPIOA
@@ -179,6 +179,16 @@
 // USART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
+
+#define USE_SERIAL_1WIRE
+// How many escs does this board support?
+#define ESC_COUNT 6
+// STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
+#define S1W_TX_GPIO         GPIOA
+#define S1W_TX_PIN          GPIO_Pin_9
+// STM32F103CBT6-LQFP48 Pin31 (PA10) RX - PC1 to onboard CP2102 TX
+#define S1W_RX_GPIO         GPIOA
+#define S1W_RX_PIN          GPIO_Pin_10
 
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32

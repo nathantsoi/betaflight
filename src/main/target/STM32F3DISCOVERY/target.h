@@ -27,6 +27,10 @@
 #define LED1_PIN    Pin_10|Pin_14  // Orange LEDs - PE10/PE14
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOE
 #define LED1_INVERTED
+#define LED2_GPIO   GPIOE
+#define LED2_PIN    Pin_11|Pin_15  // GREEN LEDs - PE11/PE15
+#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define LED2_INVERTED
 
 #define BEEP_GPIO   GPIOE
 #define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
@@ -58,6 +62,7 @@
 #define BEEPER
 #define LED0
 #define LED1
+#define LED2
 
 #define USE_VCP
 #define USE_USART1
@@ -98,3 +103,13 @@
 #define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
+
+#define USE_SERIAL_1WIRE
+// How many escs does this board support?
+#define ESC_COUNT 6
+// STM32F3DISCOVERY TX - PC3 connects to UART RX
+#define S1W_TX_GPIO         GPIOC
+#define S1W_TX_PIN          GPIO_Pin_3
+// STM32F3DISCOVERY RX - PC1 connects to UART TX
+#define S1W_RX_GPIO         GPIOC
+#define S1W_RX_PIN          GPIO_Pin_1
