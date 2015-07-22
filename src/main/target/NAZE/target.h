@@ -186,11 +186,9 @@
 // STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
 #define S1W_TX_GPIO         GPIOA
 #define S1W_TX_PIN          GPIO_Pin_9
-#define S1W_TX_PERIPH       RCC_APB2Periph_GPIOA
 // STM32F103CBT6-LQFP48 Pin31 (PA10) RX - PC1 to onboard CP2102 TX
 #define S1W_RX_GPIO         GPIOA
 #define S1W_RX_PIN          GPIO_Pin_10
-#define S1W_RX_PERIPH       RCC_APB2Periph_GPIOA
 
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32
