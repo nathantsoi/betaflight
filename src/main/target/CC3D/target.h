@@ -150,6 +150,10 @@
 #undef SONAR
 #endif
 
+#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
+#undef DISPLAY
+#endif
+
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
