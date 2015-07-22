@@ -53,7 +53,7 @@ const escHardware_t escHardware[ESC_COUNT] = {
 #elif CC3D
 const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOB, 9 },
-  { GPIOB, 9 },
+  { GPIOB, 8 },
   { GPIOB, 7 },
   { GPIOA, 8 },
   { GPIOB, 4 },

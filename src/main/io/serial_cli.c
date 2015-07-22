@@ -1987,7 +1987,7 @@ static void cliUSB1Wire(char *cmdline)
     }
     UNUSED(cmdline);
     StopPwmAllMotors();
-    // -1 means all motors, 0 = motor 1, etc.
+    // motor 1 => index 0
     usb1WirePassthrough(i-1);
 }
 #endif
