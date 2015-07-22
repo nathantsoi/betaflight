@@ -60,28 +60,19 @@ const escHardware_t escHardware[ESC_COUNT] = {
 };
 #endif
 
-// Setup some debugging LEDs
-// Leds on STM32F3DISCOVERY, note: inverted output
-// Top Left LD4, PE8 (blue)-- from programmer (RX)
-#define LED_PRGMR_RX      GPIO_Pin_8
-// Top Right LD5, PE10 (orange) -- to programmer (TX)
-#define LED_PRGMR_TX      GPIO_Pin_10
-// Bottom Left (orange) LD8, PE14 -- from esc (RX)
-#define LED_ESC_RX        GPIO_Pin_14
-// Bottom Right (blue) LD9, PE12 -- to esc (TX)
-#define LED_ESC_TX        GPIO_Pin_12
-// Left (green) LD6, PE15 -- esc input (rx) mode
-#define LED_ESC_MODE_RX   GPIO_Pin_15
-// Right (green) LD7, PE11 -- esc output (tx) mode
-#define LED_ESC_MODE_TX   GPIO_Pin_11
 
 static void gpio_enable_clock(uint32_t Periph_GPIOx);
 static void gpio_set_mode(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t mode);
 
 #if defined(STM32F3DISCOVERY)
+// Top Left LD4, PE8 (blue)-- from programmer (RX)
+#define LED_PRGMR_RX      GPIO_Pin_8
+// Top Right LD5, PE10 (orange) -- to programmer (TX)
+#define LED_PRGMR_TX      GPIO_Pin_10
+// gpioinit
 static void ledInitDebug(void)
 {
-  uint32_t pinmask = GPIO_Pin_8|GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12|GPIO_Pin_14|GPIO_Pin_15;
+  uint32_t pinmask = LED_PRGMR_RX|LED_PRGMR_TX;
   GPIO_DeInit(GPIOE);
   gpio_enable_clock(RCC_AHBPeriph_GPIOE);
   gpio_set_mode(GPIOE, pinmask, Mode_Out_PP);
