@@ -33,67 +33,45 @@
 // Periphs could be pulled progmatically... but I'll leave that for another exercise
 #if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
 const escHardware_t escHardware[ESC_COUNT] = {
-    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_12, 12 },
-    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_13, 13 },
-    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_14, 14 },
-    { RCC_AHBPeriph_GPIOD, GPIOD, GPIO_Pin_15, 15 },
-    { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_1, 1 },
-    { RCC_AHBPeriph_GPIOA, GPIOA, GPIO_Pin_2, 2 }
+  { GPIOD, 12 },
+  { GPIOD, 13 },
+  { GPIOD, 14 },
+  { GPIOD, 15 },
+  { GPIOA, 1 },
+  { GPIOA, 2 }
 };
 #elif defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
 const escHardware_t escHardware[ESC_COUNT] = {
-    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_8, 8 },
-    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_11, 11 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_6, 6 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_7, 7 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_8, 8 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_9, 9 }
+  { GPIOA, 8 },
+  { GPIOA, 11 },
+  { GPIOB, 6 },
+  { GPIOB, 7 },
+  { GPIOB, 8 },
+  { GPIOB, 9 }
 };
 #elif CC3D
 const escHardware_t escHardware[ESC_COUNT] = {
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_9, 9 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_8, 9 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_7, 7 },
-    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_8, 8 },
-    { RCC_APB2Periph_GPIOB, GPIOB, GPIO_Pin_4, 4 },
-    { RCC_APB2Periph_GPIOA, GPIOA, GPIO_Pin_2, 2 }
+  { GPIOB, 9 },
+  { GPIOB, 9 },
+  { GPIOB, 7 },
+  { GPIOA, 8 },
+  { GPIOB, 4 },
+  { GPIOA, 2 }
 };
 #endif
 
-
-static void gpio_enable_clock(uint32_t Periph_GPIOx);
-static void gpio_set_mode(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t mode);
-
-#if defined(STM32F3DISCOVERY)
-// Top Left LD4, PE8 (blue)-- from programmer (RX)
-#define LED_PRGMR_RX      GPIO_Pin_8
-// Top Right LD5, PE10 (orange) -- to programmer (TX)
-#define LED_PRGMR_TX      GPIO_Pin_10
-// gpioinit
-static void ledInitDebug(void)
-{
-  uint32_t pinmask = LED_PRGMR_RX|LED_PRGMR_TX;
-  GPIO_DeInit(GPIOE);
-  gpio_enable_clock(RCC_AHBPeriph_GPIOE);
-  gpio_set_mode(GPIOE, pinmask, Mode_Out_PP);
-  GPIOE->BRR = pinmask;
-}
-#endif
-
-// set output if output = 1, otherwise input
-static void gpio_enable_clock(uint32_t Periph_GPIOx) {
-  // Enable the clock
-#ifdef STM32F303xC
-  RCC_AHBPeriphClockCmd(Periph_GPIOx, ENABLE);
-#else
-  RCC_APB2PeriphClockCmd(Periph_GPIOx, ENABLE);
-#endif
+static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
+  gpio_config_t cfg;
+  cfg.pin = pin;
+  cfg.mode = mode;
+  cfg.speed = Speed_10MHz;
+  gpioInit(gpio, &cfg);
 }
 
 #ifdef STM32F10X
 static volatile uint32_t original_cr_mask, in_cr_mask, out_cr_mask;
 static __IO uint32_t *cr;
-static void gpioPrepVars(uint16_t escIndex)
+static void gpio_prep_vars(uint16_t escIndex)
 {
   GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
   uint32_t pinpos = escHardware[escIndex].pinpos;
@@ -126,20 +104,12 @@ static void gpioSetOne(uint16_t escIndex, GPIO_Mode mode) {
 }
 #endif
 
-static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
-  gpio_config_t cfg;
-  cfg.pin = pin;
-  cfg.mode = mode;
-  cfg.speed = Speed_10MHz;
-  gpioInit(gpio, &cfg);
-}
-
 #define disable_hardware_uart  __disable_irq()
 #define enable_hardware_uart   __enable_irq()
-#define ESC_HI(escIndex)       ((escHardware[escIndex].gpio->IDR & escHardware[escIndex].pin) != (uint32_t)Bit_RESET)
+#define ESC_HI(escIndex)       ((escHardware[escIndex].gpio->IDR & (1U << escHardware[escIndex].pinpos)) != (uint32_t)Bit_RESET)
 #define RX_HI                  ((S1W_RX_GPIO->IDR & S1W_RX_PIN) != (uint32_t)Bit_RESET)
-#define ESC_SET_HI(escIndex)   escHardware[escIndex].gpio->BSRR = escHardware[escIndex].pin
-#define ESC_SET_LO(escIndex)   escHardware[escIndex].gpio->BRR = escHardware[escIndex].pin
+#define ESC_SET_HI(escIndex)   escHardware[escIndex].gpio->BSRR = (1U << escHardware[escIndex].pinpos)
+#define ESC_SET_LO(escIndex)   escHardware[escIndex].gpio->BRR = (1U << escHardware[escIndex].pinpos)
 #define TX_SET_HIGH            S1W_TX_GPIO->BSRR = S1W_TX_PIN
 #define TX_SET_LO              S1W_TX_GPIO->BRR = S1W_TX_PIN
 
@@ -154,10 +124,20 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
 #endif
 
 #if defined(STM32F3DISCOVERY)
-#define RX_LED_OFF GPIOE->BRR = LED_PRGMR_RX
-#define RX_LED_ON  GPIOE->BSRR = LED_PRGMR_RX
-#define TX_LED_OFF GPIOE->BRR = LED_PRGMR_TX
-#define TX_LED_ON  GPIOE->BSRR = LED_PRGMR_TX
+// Top Left LD4, PE8 (blue)-- from programmer (RX)
+#define RX_LED_OFF GPIOE->BRR =  GPIO_Pin_8
+#define RX_LED_ON  GPIOE->BSRR = GPIO_Pin_8
+// Top Right LD5, PE10 (orange) -- to programmer (TX)
+#define TX_LED_OFF GPIOE->BRR =  GPIO_Pin_10
+#define TX_LED_ON  GPIOE->BSRR = GPIO_Pin_10
+static void ledInitDebug(void)
+{
+  uint32_t pinmask = LED_PRGMR_RX|LED_PRGMR_TX;
+  GPIO_DeInit(GPIOE);
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+  gpio_set_mode(GPIOE, pinmask, Mode_Out_PP);
+  GPIOE->BRR = pinmask;
+}
 #else
 #define RX_LED_OFF LED0_OFF
 #define RX_LED_ON LED0_ON
@@ -165,19 +145,10 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
 #define TX_LED_ON LED1_ON
 #endif
 
-
 // This method translates 2 wires (a tx and rx line) to 1 wire, by letting the
 // RX line control when data should be read or written from the single line
 void usb1WirePassthrough(int8_t escIndex)
 {
-  //***init port and config
-  // Take control of the LEDs
-  // Reset ESC GPIO -- https://github.com/nathantsoi/stm32-serial-1wire-passthrough/issues/2#issuecomment-119400845
-  //GPIO_DeInit(escHardware[escIndex].gpio);
-
-  // maybe we dont need thits?
-  gpio_enable_clock(escHardware[escIndex].periph);
-
 #ifdef STM32F3DISCOVERY
   ledInitDebug();
 #endif
@@ -188,16 +159,16 @@ void usb1WirePassthrough(int8_t escIndex)
   // reset all the pins
   GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
   GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
-  GPIO_ResetBits(escHardware[escIndex].gpio, escHardware[escIndex].pin);
+  GPIO_ResetBits(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos));
   // configure gpio
   gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
   gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
-  gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
+  gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
   // hey user, turn on your ESC now
 
 #ifdef STM32F10X
   // reset our gpio register pointers and bitmask values
-  gpioPrepVars(escIndex);
+  gpio_prep_vars(escIndex);
 #endif
 
   // Wait for programmer to go from 1 -> 0 indicating incoming data
@@ -218,10 +189,8 @@ void usb1WirePassthrough(int8_t escIndex)
     while(!RX_HI) {
       ct--;
       if (ct==0) {
-        // Reset ESC GPIO -- https://github.com/nathantsoi/stm32-serial-1wire-passthrough/issues/2#issuecomment-119400845
-        //GPIO_DeInit(escHardware[escIndex].gpio);
-        // Programmer RX
-        //gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+        // Programmer RX -- unneeded as we explicity set this mode above
+        // gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
 #ifdef STM32F10X

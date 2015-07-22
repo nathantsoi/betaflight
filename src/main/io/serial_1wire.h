@@ -23,9 +23,7 @@
 #ifdef USE_SERIAL_1WIRE
 
 typedef struct {
-  uint32_t periph;
   GPIO_TypeDef* gpio;
-  uint16_t pin;
   uint32_t pinpos;
 } escHardware_t;
 
