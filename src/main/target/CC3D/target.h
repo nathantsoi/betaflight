@@ -148,6 +148,7 @@
 // disabled some features for OPBL build due to code size.
 #undef AUTOTUNE
 #undef SONAR
+#define SKIP_CLI_COMMAND_HELP
 #endif
 
 #if defined(OPBL) && defined(USE_SERIAL_1WIRE)
