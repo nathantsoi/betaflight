@@ -50,6 +50,7 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
+#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 
@@ -304,6 +305,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
+
+#define MSP_SET_SERIAL_1WIRE_PASSTHROUGH 243    //in message         Enter serial 1wire passthough mode
 
 #define INBUF_SIZE 64
 
@@ -1264,6 +1267,9 @@ static bool processInCommand(void)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
+#ifdef USE_SERIAL_1WIRE
+    uint8_t serial_1wire_esc;
+#endif
 
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
@@ -1465,6 +1471,13 @@ static bool processInCommand(void)
             loadCustomServoMixer();
         }
 #endif
+        break;
+
+    case MSP_SET_SERIAL_1WIRE_PASSTHROUGH:
+        StopPwmAllMotors();
+        // 0 based index
+        serial_1wire_esc = read8();
+        usb1WirePassthrough(serial_1wire_esc);
         break;
         
     case MSP_RESET_CONF:
