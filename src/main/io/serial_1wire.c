@@ -183,6 +183,9 @@ void usb1WirePassthrough(int8_t escIndex)
   // reset our gpio register pointers and bitmask values
   gpio_prep_vars(escIndex);
 #endif
+  ESC_OUTPUT(escIndex);
+  ESC_SET_HI(escIndex);
+  TX_SET_HIGH;
 
   // Wait for programmer to go from 1 -> 0 indicating incoming data
   while(RX_HI);
@@ -198,12 +201,16 @@ void usb1WirePassthrough(int8_t escIndex)
     RX_LED_OFF;
     TX_LED_ON;
     // Wait for programmer to go 0 -> 1
-    uint32_t ct=3000;
+    uint32_t ct=5000;
     while(!RX_HI) {
       ct--;
       if (ct==0) {
         // Programmer RX -- unneeded as we explicity set this mode above
         // gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+        // Wait for the signal to go high again
+        while(!RX_HI);
+        // and wait a bit more
+        delay(2);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
 #if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
@@ -215,10 +222,9 @@ void usb1WirePassthrough(int8_t escIndex)
       }
     }
     // Programmer is high, end of bit
-    // Echo to the esc
-    ESC_SET_HI(escIndex);
     // Listen to the escIndex, input mode, pullup resistor is on
     ESC_INPUT(escIndex);
+    ESC_SET_HI(escIndex);
     TX_LED_OFF;
     // Listen to the escIndex while there is no data from the programmer
     while (RX_HI) {
