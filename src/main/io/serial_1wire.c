@@ -75,7 +75,7 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
 }
 
 #ifdef STM32F10X
-static volatile uint32_t original_cr_mask, in_cr_mask, out_cr_mask;
+static volatile uint32_t in_cr_mask, out_cr_mask;
 static __IO uint32_t *cr;
 static void gpio_prep_vars(uint16_t escIndex)
 {
@@ -89,7 +89,7 @@ static void gpio_prep_vars(uint16_t escIndex)
   // offset to CNF and MODE portions of CRx register
   uint32_t shift = (pinpos % 8) * 4;
   // Read out current CRx value
-  original_cr_mask = in_cr_mask = out_cr_mask = *cr;
+  in_cr_mask = out_cr_mask = *cr;
   // Mask out 4 bits
   in_cr_mask &= ~(0xF << shift);
   out_cr_mask &= ~(0xF << shift);
@@ -206,9 +206,6 @@ void usb1WirePassthrough(int8_t escIndex)
         // gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-#ifdef STM32F10X
-        *cr = original_cr_mask;
-#endif
 #if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
         INVERTER_ON;
 #endif
