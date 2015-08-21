@@ -1692,8 +1692,9 @@ static bool processInCommand(void)
         isRebootScheduled = true;
         break;
 
-    case MSP_SET_1WIRE:
 #ifdef USE_SERIAL_1WIRE
+    case MSP_SET_1WIRE:
+
 		//get channel number
     	i = read8();
     	//we do not give any data back, assume channel number is transmitted OK
@@ -1730,8 +1731,9 @@ static bool processInCommand(void)
 			//and wait to switch to next channel
 			//rem: App needs to call MSP_BOOT to deinitialize Passthrough
     	}
-#endif
+
             break;
+#endif
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
