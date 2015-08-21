@@ -50,7 +50,6 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
-#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 
@@ -86,6 +85,9 @@
 
 #include "serial_msp.h"
 
+#ifdef USE_SERIAL_1WIRE
+#include "io/serial_1wire.h"
+#endif
 static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
@@ -305,8 +307,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-
-#define MSP_SET_SERIAL_1WIRE_PASSTHROUGH 243    //in message         Enter serial 1wire passthough mode
+#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough 
 
 #define INBUF_SIZE 64
 
@@ -1267,9 +1268,6 @@ static bool processInCommand(void)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
-#ifdef USE_SERIAL_1WIRE
-    uint8_t serial_1wire_esc;
-#endif
 
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
@@ -1471,13 +1469,6 @@ static bool processInCommand(void)
             loadCustomServoMixer();
         }
 #endif
-        break;
-
-    case MSP_SET_SERIAL_1WIRE_PASSTHROUGH:
-        StopPwmAllMotors();
-        // 0 based index
-        serial_1wire_esc = read8();
-        usb1WirePassthrough(serial_1wire_esc);
         break;
         
     case MSP_RESET_CONF:
@@ -1701,6 +1692,46 @@ static bool processInCommand(void)
         isRebootScheduled = true;
         break;
 
+    case MSP_SET_1WIRE:
+#ifdef USE_SERIAL_1WIRE
+		//get channel number
+    	i = read8();
+    	//we do not give any data back, assume channel number is transmitted OK
+ 		if (i==0xFF){
+ 			//0xFF -> preinitialize the Passthrough
+ 			//switch all motor lines HI
+ 			usb1WireInitialize();
+    		//and come back rigth afterwards
+    		//rem: App: Wait at least appx. 500 ms for BLHeli to jump into bootloader mode before try to connect any ESC
+    	}else{
+    		//Check for channel number 0..ESC_COUNT-1
+    		if (i < ESC_COUNT){
+    			//because we do not come back after calling usb1WirePassthrough
+    			//proceed a success reply first
+    			headSerialReply(0);
+				tailSerialReply();
+				//wait for all data is send
+				while (!isSerialTransmitBufferEmpty(mspSerialPort)) {
+					delay(50);
+				}
+				//Start to activate here
+				// motor 1 => index 0
+				usb1WirePassthrough(i);
+				//MPS uart is active again
+    		} else {
+    			//ESC channel higher than max. allowed
+    			//rem: BLHelilSuite will not support more than 8
+    			//Client should check active Motors before preinitialize the Passthrough
+    			//with MSP_MOTOR and check each value >0 and later call only active channels
+    			//rem: atm not allowed channel mapping other than 0..x ascending
+    			headSerialError(0);
+			}
+			//proceed as usual with MSP commands
+			//and wait to switch to next channel
+			//rem: App needs to call MSP_BOOT to deinitialize Passthrough
+    	}
+#endif
+            break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
