@@ -117,7 +117,7 @@ note: it would be ideal to disable this when armed
 
 | Command | Msg Id | Direction |
 |---------|--------|-----------|
-| MSP\_SET\_SERIAL\_1WIRE\_PASSTHROUGH | 243 | to FC |
+| MSP\_SET\_1WIRE  | 243 | to FC |
 
 | Data | Type | Notes |
 |------|------|-------|
