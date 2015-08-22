@@ -1727,45 +1727,44 @@ static bool processInCommand(void)
 
 #ifdef USE_SERIAL_1WIRE
     case MSP_SET_1WIRE:
-
-		//get channel number
-    	i = read8();
-    	//we do not give any data back, assume channel number is transmitted OK
- 		if (i==0xFF){
- 			//0xFF -> preinitialize the Passthrough
- 			//switch all motor lines HI
- 			usb1WireInitialize();
-    		//and come back rigth afterwards
-    		//rem: App: Wait at least appx. 500 ms for BLHeli to jump into bootloader mode before try to connect any ESC
-    	}else{
-    		//Check for channel number 0..ESC_COUNT-1
-    		if (i < ESC_COUNT){
-    			//because we do not come back after calling usb1WirePassthrough
-    			//proceed a success reply first
-    			headSerialReply(0);
-				tailSerialReply();
-				//wait for all data is send
-				while (!isSerialTransmitBufferEmpty(mspSerialPort)) {
-					delay(50);
-				}
-				//Start to activate here
-				// motor 1 => index 0
-				usb1WirePassthrough(i);
-				//MPS uart is active again
-    		} else {
-    			//ESC channel higher than max. allowed
-    			//rem: BLHelilSuite will not support more than 8
-    			//Client should check active Motors before preinitialize the Passthrough
-    			//with MSP_MOTOR and check each value >0 and later call only active channels
-    			//rem: atm not allowed channel mapping other than 0..x ascending
-    			headSerialError(0);
-			}
-			//proceed as usual with MSP commands
-			//and wait to switch to next channel
-			//rem: App needs to call MSP_BOOT to deinitialize Passthrough
-    	}
-
-            break;
+        // get channel number
+        i = read8();
+        // we do not give any data back, assume channel number is transmitted OK
+        if (i==0xFF) {
+            // 0xFF -> preinitialize the Passthrough
+            // switch all motor lines HI
+            usb1WireInitialize();
+            // and come back rigth afterwards
+            // rem: App: Wait at least appx. 500 ms for BLHeli to jump into bootloader mode before try to connect any ESC
+        }
+        else {
+            // Check for channel number 0..ESC_COUNT-1
+            if (i < ESC_COUNT) {
+                // because we do not come back after calling usb1WirePassthrough
+                // proceed a success reply first
+                headSerialReply(0);
+                tailSerialReply();
+                //wait for all data is send
+                while (!isSerialTransmitBufferEmpty(mspSerialPort)) {
+                    delay(50);
+                }
+                // Start to activate here
+                // motor 1 => index 0
+                usb1WirePassthrough(i);
+                // MPS uart is active again
+            } else {
+                // ESC channel higher than max. allowed
+                // rem: BLHelilSuite will not support more than 8
+                // Client should check active Motors before preinitialize the Passthrough
+                // with MSP_MOTOR and check each value >0 and later call only active channels
+                // rem: atm not allowed channel mapping other than 0..x ascending
+                headSerialError(0);
+            }
+            // proceed as usual with MSP commands
+            // and wait to switch to next channel
+            // rem: App needs to call MSP_BOOT to deinitialize Passthrough
+        }
+        break;
 #endif
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

@@ -173,9 +173,6 @@ static void ledInitDebug(void)
 #define TX_LED_ON LED1_ON
 #endif
 
-
-
-
 // This method translates 2 wires (a tx and rx line) to 1 wire, by letting the
 // RX line control when data should be read or written from the single line
 void usb1WirePassthrough(int8_t escIndex)
@@ -218,7 +215,7 @@ void usb1WirePassthrough(int8_t escIndex)
     // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
     // Setup escIndex pin to send data, pullup is the default
 #ifdef USE_PREP_VARS
-	 ESC_OUTPUT(escIndex);
+    ESC_OUTPUT(escIndex);
     // Write the first bit
     ESC_SET_LO(escIndex);
     // Echo on the programmer tx line
@@ -237,29 +234,20 @@ void usb1WirePassthrough(int8_t escIndex)
     uint32_t ct=3333;
     while(!RX_HI) {
       ct--;
-      //check for low time ->ct=3333; //~600µS //byte Lo time for 0 @ 19200 baud -> 8*52 µS => 416µS
-      //App must send a 0 at 9600 baud (or lower) which has a LO time of at 104µS (or more)
+      // check for low time ->ct=3333; //~600uS //byte Lo time for 0 @ 19200 baud -> 8*52 uS => 416uS
+      // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more)
       if (ct==0) {
-        // Programmer RX -- unneeded as we explicity set this mode above
-        // gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
-        //Wait for end of signal low
-        //while(!RX_HI);
-        //Set ESC line high again //restore Input with pull up
+        // Set ESC line high again //restore Input with pull up
         ESC_INPUT(escIndex);
         // Programmer TX
         gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-#ifdef STM32F10X
-        //do NOT restore ports
-        //*cr = original_cr_mask;
-#endif
 #if defined(INVERTER) && defined(SERIAL_1WIRE_USE_MAIN)
         INVERTER_ON;
 #endif
-        
         // Enable Hardware UART
         enable_hardware_uart;
-        //Wait a bit more (todo check if necessary...))
-		delay(50);
+        // Wait a bit more (todo check if necessary...))
+        delay(50);
         return;
       }
     }
