@@ -110,9 +110,9 @@ sending this message for all adjustment range slots.
 | adjustmentFunction | uint8 | See below |
 | auxSwitchChannelIndex | uint8 | The Aux channel number used to perform the function (indexed from 0) |
 
-### MSP\_SET\_SERIAL\_1WIRE\_PASSTHROUGH
+### MSP\_SET\_1WIRE
 
-The MSP\_SET\_SERIAL\_1WIRE\_PASSTHROUGH is used to enable serial1wire passthrough
+The MSP\_SET\_1WIRE is used to enable serial1wire passthrough
 note: it would be ideal to disable this when armed
 
 | Command | Msg Id | Direction |
