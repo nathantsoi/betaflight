@@ -24,8 +24,6 @@
 
 #ifdef USE_SERIAL_1WIRE
 
-//#define USE_PREP_VARS
-
 #include "drivers/gpio.h"
 #include "drivers/inverter.h"
 #include "drivers/light_led.h"
@@ -86,7 +84,6 @@ void usb1WireInitialize()
 }
 
 
-#ifdef USE_PREP_VARS
 #ifdef STM32F10X
 
 static volatile uint32_t in_cr_mask, out_cr_mask;
@@ -123,7 +120,6 @@ static void gpioSetOne(uint16_t escIndex, GPIO_Mode mode) {
   }
 }
 #endif
-#endif //USE_PREP_VARS
 
 #define disable_hardware_uart  __disable_irq()
 #define enable_hardware_uart   __enable_irq()
@@ -140,13 +136,8 @@ static void gpioSetOne(uint16_t escIndex, GPIO_Mode mode) {
 #endif
 
 #ifdef STM32F10X
-#ifdef USE_PREP_VARS
 #define ESC_INPUT(escIndex)    gpioSetOne(escIndex, Mode_IPU)
 #define ESC_OUTPUT(escIndex)   gpioSetOne(escIndex, Mode_Out_PP)
-#else
-#define ESC_INPUT(escIndex)    gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
-#define ESC_OUTPUT(escIndex)   gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_Out_PP);
-#endif //USE_PREP_VARS
 #endif
 
 #if defined(STM32F3DISCOVERY)
@@ -201,9 +192,7 @@ void usb1WirePassthrough(int8_t escIndex)
 
 #ifdef STM32F10X
   // reset our gpio register pointers and bitmask values
-#ifdef USE_PREP_VARS
   gpio_prep_vars(escIndex);
-#endif
 #endif
 
    ESC_OUTPUT(escIndex);
@@ -214,19 +203,11 @@ void usb1WirePassthrough(int8_t escIndex)
   while(1) {
     // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
     // Setup escIndex pin to send data, pullup is the default
-#ifdef USE_PREP_VARS
     ESC_OUTPUT(escIndex);
     // Write the first bit
     ESC_SET_LO(escIndex);
     // Echo on the programmer tx line
     TX_SET_LO;
-#else
-    // Write the first bit
-    ESC_SET_LO(escIndex);
-    ESC_OUTPUT(escIndex);
-    // Echo on the programmer tx line
-    TX_SET_LO;
-#endif
     //set LEDs
     RX_LED_OFF;
     TX_LED_ON;
