@@ -21,6 +21,7 @@
 #pragma once
 
 #ifdef USE_SERIAL_1WIRE
+
 typedef struct {
   GPIO_TypeDef* gpio;
   uint32_t pinpos;
