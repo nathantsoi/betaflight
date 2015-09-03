@@ -357,6 +357,10 @@ static blackboxMainState_t* blackboxHistory[3];
 
 static bool blackboxModeActivationConditionPresent = false;
 
+static bool blackboxIsOnlyLoggingIntraframes() {
+    return masterConfig.blackbox_rate_num == 1 && masterConfig.blackbox_rate_denom == 32;
+}
+
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
     switch (condition) {
@@ -1221,9 +1225,9 @@ static void blackboxLogIteration()
     if (blackboxShouldLogIFrame()) {
         /*
          * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
-         * an additional item to write at the same time)
+         * an additional item to write at the same time). Unless we're *only* logging "I" frames, then we have no choice.
          */
-        writeSlowFrameIfNeeded(false);
+        writeSlowFrameIfNeeded(blackboxIsOnlyLoggingIntraframes());
 
         loadMainState();
         writeIntraframe();
@@ -1332,7 +1336,15 @@ void handleBlackbox(void)
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
             if (blackboxWriteSysinfo()) {
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
+
+                /*
+                 * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
+                 * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
+                 * could wipe out the end of the header if we weren't careful)
+                 */
+                if (blackboxDeviceFlush()) {
+                    blackboxSetState(BLACKBOX_STATE_RUNNING);
+                }
             }
         break;
         case BLACKBOX_STATE_PAUSED:
