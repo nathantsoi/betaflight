@@ -1,51 +1,65 @@
 env:
-  - RUNTESTS=True
-  - PUBLISHMETA=True
-  - PUBLISHDOCS=True
-  - TARGET=CC3D
-  - TARGET=CC3D OPBL=yes
-  - TARGET=CHEBUZZF3
-  - TARGET=CJMCU
-  - TARGET=EUSTM32F103RC
-  - TARGET=SPRACINGF3
-  - TARGET=NAZE
-  - TARGET=NAZE32PRO
-  - TARGET=OLIMEXINO
-  - TARGET=PORT103R
-  - TARGET=SPARKY
-  - TARGET=STM32F3DISCOVERY
-  - TARGET=ALIENWIIF1
-  - TARGET=ALIENWIIF3
-
-# use new docker environment
+- RUNTESTS=True
+- PUBLISHMETA=True
+- PUBLISHDOCS=True
+- TARGET=CC3D
+- TARGET=CC3D OPBL=yes
+- TARGET=CHEBUZZF3
+- TARGET=CJMCU
+- TARGET=EUSTM32F103RC
+- TARGET=SPRACINGF3
+- TARGET=NAZE
+- TARGET=NAZE32PRO
+- TARGET=OLIMEXINO
+- TARGET=PORT103R
+- TARGET=SPARKY
+- TARGET=STM32F3DISCOVERY
+- TARGET=ALIENWIIF1
+- TARGET=ALIENWIIF3
 sudo: false
-
 addons:
   apt:
     packages:
-      - build-essential
-      - git
-      - libc6-i386
-      - zlib1g-dev
-      - libssl-dev
-      - wkhtmltopdf
-      - libxml2-dev
-      - libxslt-dev
-
-# We use cpp for unit tests, and c for the main project.
+    - build-essential
+    - git
+    - libc6-i386
+    - zlib1g-dev
+    - libssl-dev
+    - wkhtmltopdf
+    - libxml2-dev
+    - libxslt-dev
 language: cpp
 compiler: clang
-
 before_install:
-  - curl --retry 10 --retry-max-time 120 -L "https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2" | tar xfj -
-
+- curl --retry 10 --retry-max-time 120 -L "https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2"
+  | tar xfj -
 install:
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
-
+- export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
-
 cache: apt
-
 notifications:
   slack: vertile:dGRh6yKa65PvGwS314hShnpc
+deploy:
+  provider: releases
+  api_key:
+    secure: NmSrQ1VlZR+mb5/XHPV6ChLq4VBTmeK4EhVeOjGqULckCyQZvHzfXZk1SoSvy5nKAYfNVezbRpHZYtH9BlS+H2XBwgmZgIq8BsqTNvhPY51lv2ahclqENPTMTdJNhngESueZqHrx2eePu1MJaapLYmZbawWQWje9peoNL9VCNhxA2l+bGoVpKaxuqJUdfwT8vqpAw2AvaEhezV6BcCq7j4gpMKtvngigDMQ04O0Ai3YwBlLc8sBIj38oTs3J9rvM+0BBGhwgOGtur1MILTNpZ2hOmIue2iUUugH9ImRuZZMefRe5kjqmzIuuXFSI4F7Nfh2Dm1u+J/fbbvuZ6ljL+/ypNOAQf1DMF1uwX79q5Y+a0voIrHT6MTS2XuEVBFbk/mpw/q5pTuZ7I/5NTvxkfZZJazx3ESecl/ErOM6lNhkIvpK3Pg5QzoPPlXMFx+HrH7OFsw6QhzOXqWdqQI1xrnLmXaYtHMquZVwZBMN3ssHM31f6Gp8lFb97+xWWmwu4cSIAKM96Dm9sV3lF8d2MKixwpMchm/99vlijSctLN3kD37s2eAMWZPcUGxFlq+g3fuHq8NJ5TqVnhOTk3xVFcfU/Viu0OwGt1Em8U2q4PzNK1+RELGI8FREyxQaT4dBZLeP0CnpQoG3j6dztIfFQL4SawpP7nfMYFpuaj970J+g=
+  file:
+    - obj/cleanflight_NAZE.hex
+    - obj/cleanflight_CC3D.hex
+    - obj/cleanflight_CC3D.bin
+    - obj/cleanflight_CHEBUZZF3.hex
+    - obj/cleanflight_CJMCU.hex
+    - obj/cleanflight_EUSTM32F103RC.hex
+    - obj/cleanflight_SPRACINGF3.hex
+    - obj/cleanflight_NAZE.hex
+    - obj/cleanflight_NAZE32PRO.hex
+    - obj/cleanflight_OLIMEXINO.hex
+    - obj/cleanflight_PORT103R.hex
+    - obj/cleanflight_SPARKY.hex
+    - obj/cleanflight_STM32F3DISCOVERY.hex
+    - obj/cleanflight_ALIENWIIF1.hex
+    - obj/cleanflight_ALIENWIIF3.hex
+  on:
+    branch: fly
+    tags: true
