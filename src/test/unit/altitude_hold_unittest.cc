@@ -59,12 +59,12 @@ extern "C" {
 
 
 extern "C" {
-    bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
-    uint16_t calculateTiltAngle(rollAndPitchInclination_t *inclinations);
+    bool isThrustFacingDownwards(attitudeEulerAngles_t *inclinations);
+    uint16_t calculateTiltAngle(attitudeEulerAngles_t *inclinations);
 }
 
 typedef struct inclinationExpectation_s {
-    rollAndPitchInclination_t inclination;
+    attitudeEulerAngles_t attitude;
     bool expectDownwardsThrust;
 } inclinationExpectation_t;
 
@@ -94,13 +94,13 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
 #ifdef DEBUG_ALTITUDE_HOLD
         printf("iteration: %d\n", index);
 #endif
-        bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
+        bool result = isThrustFacingDownwards(&angleInclinationExpectation->attitude);
         EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);
     }
 }
 
 typedef struct inclinationAngleExpectations_s {
-    rollAndPitchInclination_t inclination;
+    attitudeEulerAngles_t attitude;
     uint16_t expected_angle;
 } inclinationAngleExpectations_t;
 
@@ -118,13 +118,13 @@ TEST(AltitudeHoldTest, TestCalculateTiltAngle)
         { {{ 2,  1}}, 2}
     };
 
-    rollAndPitchInclination_t inclination = {{0, 0}};
-    uint16_t tilt_angle = calculateTiltAngle(&inclination);
+    attitudeEulerAngles_t attitude = {{0, 0}};
+    uint16_t tilt_angle = calculateTiltAngle(&attitude);
     EXPECT_EQ(tilt_angle, 0);
 
     for (uint8_t i = 0; i < 9; i++) {
         inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
-        uint16_t result = calculateTiltAngle(&expectation->inclination);
+        uint16_t result = calculateTiltAngle(&expectation->attitude);
         EXPECT_EQ(expectation->expected_angle, result);
     }
 }
@@ -140,7 +140,7 @@ uint32_t accTimeSum ;        // keep track for integration of acc
 int accSumCount;
 float accVelScale;
 
-rollAndPitchInclination_t inclination;
+attitudeEulerAngles_t attitude;
 
 //uint16_t acc_1G;
 //int16_t heading;
