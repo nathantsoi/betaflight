@@ -53,6 +53,7 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
+#include "io/max_osd.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"

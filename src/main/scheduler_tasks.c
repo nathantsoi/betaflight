@@ -37,6 +37,7 @@ void taskUpdateBaro(void);
 void taskUpdateSonar(void);
 void taskCalculateAltitude(void);
 void taskUpdateDisplay(void);
+void taskUpdateMaxOSD(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
@@ -164,6 +165,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_DISPLAY] = {
         .taskName = "DISPLAY",
         .taskFunc = taskUpdateDisplay,
+        .desiredPeriod = 1000000 / 10,
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef MAX_OSD
+    [TASK_MAX_OSD] = {
+        .taskName = "MAX_OSD",
+        .taskFunc = taskUpdateMaxOSD,
         .desiredPeriod = 1000000 / 10,
         .staticPriority = TASK_PRIORITY_LOW,
     },

@@ -55,6 +55,7 @@
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/max_osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -303,6 +304,53 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
 }
 
+#ifdef MAX_OSD
+void resetMaxOsdConfig(maxOsdConfig_t *maxOsdConfig)
+{
+    maxOsdConfig->videoType = NTSC;
+
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_NUM_SAT] = (LINE02+2)|MAX_OSD_DISPLAY_NEVER;  // GPS_numSatPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_TIME] = (LINE12+11)|MAX_OSD_DISPLAY_NEVER;  // GPS_time Position
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_DIRECTION_HOME] = (LINE02+22)|MAX_OSD_DISPLAY_NEVER;   // GPS_directionToHomePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_DISTANCE_HOME] = (LINE02+24)|MAX_OSD_DISPLAY_NEVER;   // GPS_distanceToHomePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_SPEED] = (LINE07+3)|MAX_OSD_DISPLAY_NEVER;   // speedPosition (gps speed)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_ANGLE_HOME] = (LINE05+24)|MAX_OSD_DISPLAY_NEVER;   // GPS_angleToHomePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_ALTITUDE] = (LINE03+24)|MAX_OSD_DISPLAY_NEVER;   // MwGPSAltPosition (altitude)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_HEADING] = (LINE04+24)|MAX_OSD_DISPLAY_NEVER;   // MwHeadingPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_HEADING_GRAPH] = (LINE02+10)|MAX_OSD_DISPLAY_NEVER;   // MwHeadingGraphPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_LAT] = (LINE01+2)|MAX_OSD_DISPLAY_NEVER;   // MwGPSLatPositionTop      // On top of screen
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GPS_LON] = (LINE01+15)|MAX_OSD_DISPLAY_NEVER;   // MwGPSLonPositionTop      // On top of screen
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_MAP_MODE] = (LINE02+22)|MAX_OSD_DISPLAY_NEVER;   // MapModePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_MAP_CENTER] = (LINE07+15)|MAX_OSD_DISPLAY_NEVER;   // MapCenterPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_BARO] = (LINE07+23)|MAX_OSD_DISPLAY_ALWAYS;   // MwAltitudePosition (baro)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_CLIMB] = (LINE07+22)|MAX_OSD_DISPLAY_NEVER;   // MwClimbRatePosition (from change in gps altitude in scarab osd)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_PITCH_ANGLE] = (LINE10+2)|MAX_OSD_DISPLAY_NEVER;   // pitchAnglePosition (show angles as numbers)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_ROLL_ANGLE] = (LINE10+15)|MAX_OSD_DISPLAY_NEVER;   // rollAnglePosition (show angles as numbers)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_SENSOR] = (LINE02+6)|MAX_OSD_DISPLAY_NEVER;   // sensorPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_THROTTLE] = (LINE12+22)|MAX_OSD_DISPLAY_NEVER;   // CurrentThrottlePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_MOTOR_ARMED] = (LINE11+11)|MAX_OSD_DISPLAY_NEVER;   // motorArmedPosition (and alarms)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_RSSI] = (LINE12+3)|MAX_OSD_DISPLAY_ALWAYS;   // rssiPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_TEMP] = (LINE09+3)|MAX_OSD_DISPLAY_NEVER;   // temperaturePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_VOLTAGE] = (LINE13+3)|MAX_OSD_DISPLAY_ALWAYS;  // voltagePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_AMPERAGE] = (LINE13+9)|MAX_OSD_DISPLAY_ALWAYS;   // amperagePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_MODE] = (LINE04+2)|MAX_OSD_DISPLAY_ALWAYS;   // modePosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_POWER_METER] = (LINE13+16)|MAX_OSD_DISPLAY_ALWAYS;   // pMeterSumPosition (battery icon)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_WATT] = (LINE12+9)|MAX_OSD_DISPLAY_NEVER;   // wattPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_TIME] = (LINE13+22)|MAX_OSD_DISPLAY_ALWAYS; // on time and armed time
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_HORIZON] = (LINE07+14)|MAX_OSD_DISPLAY_ALWAYS; // horizonPosition (and forced crosshair)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_HORIZON_SIDEBARS] = (LINE07+7)|MAX_OSD_DISPLAY_NEVER;
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_GIMBAL] = (LINE05+2)|MAX_OSD_DISPLAY_NEVER;   // gimbalPosition
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_SPORT] = (LINE09+22)|MAX_OSD_DISPLAY_NEVER;   // SportPosition (battery cells?)
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_CALLSIGN] = (LINE10+10)|MAX_OSD_DISPLAY_NEVER;   // CallSign Position
+    maxOsdConfig->fieldPosition[MAX_OSD_FIELD_DEBUG] = (LINE08+10)|MAX_OSD_DISPLAY_NEVER;   // Debug Position
+
+// TEST ONLY, the font is big and we dont want that in the production binary
+#ifdef MAX_UPLOAD_FONT_ON_RESET
+    max7456UpdateFont();
+#endif
+}
+#endif //MAX_OSD
+
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
 #define SECOND_PORT_INDEX 0
@@ -422,6 +470,11 @@ static void resetConf(void)
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
     featureSet(FEATURE_VBAT);
+#endif
+
+#ifdef MAX_OSD
+    featureSet(FEATURE_MAX_OSD);
+    resetMaxOsdConfig(&masterConfig.maxOsdConfig);
 #endif
 
     masterConfig.version = EEPROM_CONF_VERSION;
@@ -621,6 +674,13 @@ static void resetConf(void)
     masterConfig.blackbox_device = 0;
 #endif
 
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
+#if defined(FURYF3)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 2;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif

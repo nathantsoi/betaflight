@@ -72,6 +72,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/max_osd.h"
 #include "io/vtx.h"
 
 #include "sensors/sensors.h"
@@ -192,7 +193,7 @@ void init(void)
     EXTIInit();
 #endif
 
-#ifdef SPRACINGF3MINI
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
@@ -416,10 +417,12 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
+#endif
 #endif
 
 #ifdef USE_I2C
@@ -464,6 +467,12 @@ void init(void)
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef MAX_OSD
+    if (feature(FEATURE_MAX_OSD)) {
+        initMaxOSD(&masterConfig.maxOsdConfig);
     }
 #endif
 
@@ -725,6 +734,9 @@ void main_init(void)
 #endif
 #ifdef DISPLAY
     setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#endif
+#ifdef MAX_OSD
+    setTaskEnabled(TASK_MAX_OSD, feature(FEATURE_MAX_OSD));
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));

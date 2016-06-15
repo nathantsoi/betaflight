@@ -463,6 +463,10 @@ VCP_SRC = \
             drivers/usb_io.c
 endif
 
+MAX_OSD_SRC = \
+              drivers/max7456.c \
+              io/max_osd.c
+
 STM32F10x_COMMON_SRC = \
             startup_stm32f10x_md_gcc.S \
             drivers/adc_stm32f10x.c \
@@ -535,6 +539,10 @@ endif
 
 ifneq ($(filter VCP,$(FEATURES)),)
 TARGET_SRC += $(VCP_SRC)
+endif
+
+ifneq ($(filter MAX_OSD,$(FEATURES)),)
+TARGET_SRC += $(MAX_OSD_SRC)
 endif
 # end target specific make file checks
 

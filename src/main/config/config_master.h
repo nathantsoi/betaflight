@@ -83,6 +83,10 @@ typedef struct master_t {
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
     batteryConfig_t batteryConfig;
 
+#ifdef MAX_OSD
+    maxOsdConfig_t maxOsdConfig;
+#endif
+
     // Radio/ESC-related configuration
     rcControlsConfig_t rcControlsConfig;
 

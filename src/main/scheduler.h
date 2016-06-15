@@ -70,6 +70,9 @@ typedef enum {
 #ifdef DISPLAY
     TASK_DISPLAY,
 #endif
+#ifdef MAX_OSD
+    TASK_MAX_OSD,
+#endif
 #ifdef TELEMETRY
     TASK_TELEMETRY,
 #endif
