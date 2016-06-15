@@ -26,6 +26,8 @@
 // DO NOT include font file in production
 #ifdef MAX_UPLOAD_FONT_ON_RESET
 #include "max7456_font_bold.h"
+// or
+//#include "max7456_font.h"
 #endif
 
 #ifdef MAX_OSD

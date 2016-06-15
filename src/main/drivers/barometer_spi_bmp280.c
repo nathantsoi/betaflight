@@ -23,8 +23,6 @@
 
 #include "build_config.h"
 
-#ifdef USE_BARO_SPI_BMP280
-
 #include "bus_spi.h"
 
 #include "barometer.h"
@@ -110,5 +108,3 @@ void bmp280_spi_get_up(void)
     bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
     bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
 }
-
-#endif //USE_BARO_SPI_BMP280
