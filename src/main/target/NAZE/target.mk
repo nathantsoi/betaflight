@@ -1,5 +1,5 @@
-FEATURES     = ONBOARDFLASH HIGHEND 
 F1_TARGETS  += $(TARGET)
+FEATURES    = ONBOARDFLASH HIGHEND 
 
 TARGET_SRC = \
             drivers/accgyro_adxl345.c \
@@ -17,5 +17,4 @@ TARGET_SRC = \
             drivers/compass_hmc5883l.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f10x.c \
-            drivers/sonar_hcsr04.c \
-            hardware_revision.c
+            drivers/sonar_hcsr04.c

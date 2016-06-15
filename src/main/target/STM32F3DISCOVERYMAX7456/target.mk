@@ -1,5 +1,5 @@
+F3_TARGETS  += $(TARGET)
 FEATURES    = VCP MAX_OSD
-F3_TARGETS += $(TARGET)
 
 TARGET_SRC = \
             drivers/light_ws2811strip.c \
