@@ -3101,12 +3101,9 @@ static void cliDefaults(char *cmdline)
 
 static void cliPrint(const char *str)
 {
-    while (*str)
-        bufWriterAppend(cliWriter, *str++);
-
-#ifdef USE_SLOW_SERIAL_CLI
-    delay(1);
-#endif
+	while (*str) {
+		bufWriterAppend(cliWriter, *str++);
+	}
 }
 
 static void cliPutp(void *p, char ch)
@@ -3158,10 +3155,6 @@ static void cliPrintf(const char *fmt, ...)
     va_start(va, fmt);
     tfp_format(cliWriter, cliPutp, fmt, va);
     va_end(va);
-
-#ifdef USE_SLOW_SERIAL_CLI
-    delay(1);
-#endif
 }
 
 static void cliWrite(uint8_t ch)
