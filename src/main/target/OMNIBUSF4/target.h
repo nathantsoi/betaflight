@@ -1,18 +1,19 @@
 /*
- * This file is part of Cleanflight.
+ * Authors:
+ *  Nathan Tsoi
  *
- * Cleanflight is free software: you can redistribute it and/or modify
+ * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -21,16 +22,14 @@
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING "OmnibusF4"
+#define USBD_PRODUCT_STRING     "OmnibusF4"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0                    PB5
 #define LED1                    PB4
-
 #define BEEPER                  PB4
-
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
 
@@ -53,10 +52,10 @@
 
 #define MAG
 #define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN CW90_DEG
+#define MAG_HMC5883_ALIGN       CW90_DEG
 
 //#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP
+//#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
 
 #define BARO
 #define USE_BARO_MS5611
@@ -81,11 +80,11 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PC5
+#define VBUS_SENSING_PIN        PC5
 
 #define USE_UART1
-#define UART1_RX_PIN            PA10
-#define UART1_TX_PIN            PA9
+#define UART1_RX_PIN PA10
+#define UART1_TX_PIN PA9
 #define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
@@ -120,15 +119,19 @@
 #define SENSORS_SET (SENSOR_ACC)
 
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
