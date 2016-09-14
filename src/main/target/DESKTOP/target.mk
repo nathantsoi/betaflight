@@ -1,0 +1,1 @@
+CFLAGS += -DUNIT_TEST
