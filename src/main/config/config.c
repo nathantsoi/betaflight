@@ -80,6 +80,7 @@
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -97,10 +98,14 @@ void targetConfiguration(master_t *config);
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
-static uint32_t activeFeaturesLatch = 0;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
+
+
+void intFeatureClearAll(master_t *config);
+void intFeatureSet(uint32_t mask, master_t *config);
+void intFeatureClear(uint32_t mask, master_t *config);
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -303,7 +308,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_500000;
         serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
         serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
         serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
@@ -370,10 +375,6 @@ uint16_t getCurrentMinthrottle(void)
 {
     return masterConfig.escAndServoConfig.minthrottle;
 }
-
-static void intFeatureClearAll(master_t *config);
-static void intFeatureSet(uint32_t mask, master_t *config);
-static void intFeatureClear(uint32_t mask, master_t *config);
 
 // Default settings
 void createDefaultConfig(master_t *config)
@@ -677,16 +678,16 @@ void activateConfig(void)
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
-#ifdef USE_SERVOS
-        masterConfig.servoConf,
-        &masterConfig.gimbalConfig,
-#endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
         &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
     );
+
+#ifdef USE_SERVOS
+    servoUseConfigs(masterConfig.servoConf, &masterConfig.gimbalConfig);
+#endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
@@ -863,56 +864,6 @@ void changeControlRateProfile(uint8_t profileIndex)
     }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();
-}
-
-void latchActiveFeatures()
-{
-    activeFeaturesLatch = masterConfig.enabledFeatures;
-}
-
-bool featureConfigured(uint32_t mask)
-{
-    return masterConfig.enabledFeatures & mask;
-}
-
-bool feature(uint32_t mask)
-{
-    return activeFeaturesLatch & mask;
-}
-
-void featureSet(uint32_t mask)
-{
-    intFeatureSet(mask, &masterConfig);
-}
-
-static void intFeatureSet(uint32_t mask, master_t *config)
-{
-    config->enabledFeatures |= mask;
-}
-
-void featureClear(uint32_t mask)
-{
-    intFeatureClear(mask, &masterConfig);
-}
-
-static void intFeatureClear(uint32_t mask, master_t *config)
-{
-    config->enabledFeatures &= ~(mask);
-}
-
-void featureClearAll()
-{
-    intFeatureClearAll(&masterConfig);
-}
-
-static void intFeatureClearAll(master_t *config)
-{
-    config->enabledFeatures = 0;
-}
-
-uint32_t featureMask(void)
-{
-    return masterConfig.enabledFeatures;
 }
 
 void beeperOffSet(uint32_t mask)

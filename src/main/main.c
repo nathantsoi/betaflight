@@ -108,6 +108,7 @@
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
@@ -239,10 +240,9 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-#ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
-#else
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+#ifdef USE_SERVOS
+    servoInit(masterConfig.customServoMixer);
 #endif
 
     drv_pwm_config_t pwm_params;
@@ -504,7 +504,7 @@ void init(void)
 
     imuInit();
 
-    mspInit(&masterConfig.serialConfig);
+    mspSerialInit(&masterConfig.serialConfig);
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

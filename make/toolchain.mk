@@ -8,9 +8,10 @@ endif
 # Tool names
 # STM32
 ifeq ($(PLATFORM), STM32)
-CC          := $(CCACHE) arm-none-eabi-gcc
-OBJCOPY     := arm-none-eabi-objcopy
-SIZE        := arm-none-eabi-size
+CC          := $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CPP         := $(CCACHE) $(ARM_SDK_PREFIX)g++
+OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+SIZE        := $(ARM_SDK_PREFIX)size
 
 # DESKTOP
 else
