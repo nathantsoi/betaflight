@@ -18,7 +18,7 @@
 #pragma once
 
 // System-wide
-typedef struct master_t {
+typedef struct master_s {
     uint8_t version;
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
@@ -136,7 +136,7 @@ typedef struct master_t {
 #endif
 
 #ifdef OSD
-    osd_profile osdProfile;
+    osd_profile_t osdProfile;
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
