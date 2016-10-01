@@ -36,12 +36,11 @@ endif
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
 CFLAGS      += $(ARCH_FLAGS) \
-              $(LTO_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu99 \
-              -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra \
               -ffunction-sections \
               -fdata-sections \
               -pedantic \
@@ -55,12 +54,18 @@ CFLAGS      += $(ARCH_FLAGS) \
               -D'__REVISION__="$(REVISION)"' \
               -save-temps=obj \
               -MMD -MP
+ifeq ($(PLATFORM), STM32)
+CFLAGS      += $(LTO_FLAGS) \
+              -Wunsafe-loop-optimizations -Wdouble-promotion
+endif
 
 ASFLAGS     = $(ARCH_FLAGS) \
               -x assembler-with-cpp \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               -MMD -MP
 
+# STM32
+ifeq ($(PLATFORM), STM32)
 LDFLAGS     = -lm \
               -nostartfiles \
               --specs=nano.specs \
@@ -75,4 +80,10 @@ LDFLAGS     = -lm \
               -Wl,--cref \
               -Wl,--no-wchar-size-warning \
               -T$(LD_SCRIPT)
+else
+LDFLAGS     = \
+              -lm \
+              -lc \
+							-v
+endif
 

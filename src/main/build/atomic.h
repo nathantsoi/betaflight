@@ -17,6 +17,9 @@
 
 #pragma once
 
+#ifdef DESKTOP
+//TODO desktop apis
+#else
 // only set_BASEPRI is implemented in device library. It does always create memory barrirer
 // missing versions are implemented here
 
@@ -110,3 +113,4 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // define these wrappers for atomic operations, use gcc buildins
 #define ATOMIC_OR(ptr, val) __sync_fetch_and_or(ptr, val)
 #define ATOMIC_AND(ptr, val) __sync_fetch_and_and(ptr, val)
+#endif

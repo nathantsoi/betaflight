@@ -626,7 +626,7 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConf(void)
 {
     createDefaultConfig(&masterConfig);
 

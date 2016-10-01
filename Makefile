@@ -155,29 +155,19 @@ BASE_SRC = \
             common/streambuf.c \
             common/typeconversion.c \
             config/config.c \
-            config/config_eeprom.c \
             config/feature.c
+
 
 COMMON_SRC = \
             $(BASE_SRC) \
             fc/runtime_config.c \
-            drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
-            drivers/bus_spi.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
-            drivers/io.c \
             drivers/light_led.c \
-            drivers/pwm_mapping.c \
-            drivers/pwm_output.c \
-            drivers/pwm_rx.c \
-            drivers/rcc.c \
             drivers/serial.c \
-            drivers/serial_uart.c \
             drivers/sound_beeper.c \
-            drivers/system.c \
-            drivers/timer.c \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -188,12 +178,9 @@ COMMON_SRC = \
             io/beeper.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
-            io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/serial_cli.c \
-            io/serial_msp.c \
             io/statusindicator.c \
             rx/ibus.c \
             rx/jetiexbus.c \
@@ -213,6 +200,7 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/initialisation.c
+
 
 HIGHEND_SRC = \
             blackbox/blackbox.c \
@@ -247,6 +235,46 @@ PLATFORM = STM32
 include make/platforms/stm32.mk
 else
 $(error Target '$(TARGET)' has not specified a valid DESKTOP or STM group, must be one of DESKTOP, F1, F3, F405, or F411. Have you prepared a valid target.mk?)
+endif
+
+
+ifeq ($(PLATFORM), STM32)
+BASE_SRC += config/config_eeprom.c
+#else
+#BASE_SRC += config/config_eeprom_desktop.c
+endif
+
+
+ifeq ($(PLATFORM), STM32)
+COMMON_SRC += \
+            drivers/adc.c \
+            drivers/bus_spi.c \
+            drivers/io.c \
+            drivers/pwm_mapping.c \
+            drivers/pwm_output.c \
+            drivers/pwm_rx.c \
+            drivers/rcc.c \
+            drivers/serial_uart.c \
+            drivers/system.c \
+            drivers/timer.c \
+            io/serial.c \
+            io/serial_cli.c \
+            io/serial_msp.c
+else
+COMMON_SRC += \
+            io/serial_cli_desktop.c \
+            io/serial_msp_desktop.c
+#            drivers/adc_desktop.c \
+#            drivers/bus_spi_desktop.c \
+#            drivers/io_desktop.c \
+#            drivers/pwm_mapping_desktop.c \
+#            drivers/pwm_output_desktop.c \
+#            drivers/pwm_rx_desktop.c \
+#            drivers/rcc_desktop.c \
+#            drivers/serial_uart_desktop.c \
+#            drivers/system_desktop.c \
+#            drivers/timer_desktop.c \
+#            io/serial_desktop.c
 endif
 
 TARGET_SRC += $(COMMON_SRC)
@@ -286,6 +314,7 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
+TARGET_DESKTOP  = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)
 TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
 TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
@@ -297,6 +326,8 @@ CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
+# FC
+ifeq ($(PLATFORM), STM32)
 $(TARGET_HEX): $(TARGET_ELF)
 	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
@@ -307,6 +338,13 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 	$(V1) echo LD $(notdir $@)
 	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
 	$(V0) $(SIZE) $(TARGET_ELF)
+
+# DESKTOP
+else
+$(TARGET_DESKTOP):  $(TARGET_OBJS)
+	$(V1) echo LD $(notdir $@)
+	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+endif
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
@@ -380,11 +418,16 @@ st-flash_$(TARGET): $(TARGET_BIN)
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
+ifeq ($(PLATFORM), STM32)
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)
 
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
+else
+binary:
+	$(V0) $(MAKE) -j $(TARGET_DESKTOP)
+endif
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon

@@ -271,18 +271,18 @@ zip_clean:
 #
 ##############################
 
-GCC_VERSION=$(shell arm-none-eabi-gcc -dumpversion)
-ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
-  ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
-else ifeq (,$(findstring _install,$(MAKECMDGOALS)))
-  ifeq ($(GCC_VERSION),)
-    $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
-  else ifneq ($(GCC_VERSION), $(GCC_REQUIRED_VERSION))
-    $(error **ERROR** your arm-none-eabi-gcc is '$(GCC_VERSION)', but '$(GCC_REQUIRED_VERSION)' is expected. Override with 'GCC_REQUIRED_VERSION' in make/local.mk or run 'make arm_sdk_install' to install the right version automatically in the tools folder of this repo)
-  endif
-  # not installed, hope it's in the path...
-  ARM_SDK_PREFIX ?= arm-none-eabi-
-endif
+#GCC_VERSION=$(shell arm-none-eabi-gcc -dumpversion)
+#ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
+#  ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
+#else ifeq (,$(findstring _install,$(MAKECMDGOALS)))
+#  ifeq ($(GCC_VERSION),)
+#    $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
+#  else ifneq ($(GCC_VERSION), $(GCC_REQUIRED_VERSION))
+#    $(error **ERROR** your arm-none-eabi-gcc is '$(GCC_VERSION)', but '$(GCC_REQUIRED_VERSION)' is expected. Override with 'GCC_REQUIRED_VERSION' in make/local.mk or run 'make arm_sdk_install' to install the right version automatically in the tools folder of this repo)
+#  endif
+#  # not installed, hope it's in the path...
+#  ARM_SDK_PREFIX ?= arm-none-eabi-
+#endif
 
 ifeq ($(shell [ -d "$(ZIP_DIR)" ] && echo "exists"), exists)
   export ZIPBIN := $(ZIP_DIR)/zip

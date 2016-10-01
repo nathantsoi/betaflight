@@ -12,19 +12,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdint.h>
 
 #pragma once
 
-#define MAG
-#define BARO
-#define GPS
-#define DISPLAY
-#define TELEMETRY
-#define LED_STRIP
+//#define MAG
+//#define BARO
+//#define GPS
+//#define DISPLAY
+//#define TELEMETRY
+//#define LED_STRIP
 #define USE_SERVOS
-#define TRANSPONDER
+//#define TRANSPONDER
 
-#define SERIAL_PORT_COUNT 4
+#define GYRO
+#define USE_FAKE_GYRO
+
+#define SERIAL_PORT_COUNT 1
 
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
@@ -59,6 +63,11 @@ typedef struct
 {
     void* test;
 } I2C_TypeDef;
+
+typedef struct
+{
+    void* test;
+} ADC_TypeDef;
 
 typedef struct
 {
