@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define OBF4_REV1
+
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
@@ -59,8 +61,47 @@
 //#define USE_MAG_NAZA
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP
 
+#ifdef OBF4_REV1 // v2 and pro
 #define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define BMP280_SPI_INSTANCE     SPI3
+#define BMP280_CS_PIN           PB3
+
+#define USE_SPI_DEVICE_2
+
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI2
+
+#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_PIN               PB7
+#define SDCARD_SPI_INSTANCE             SPI2
+#define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
+
+// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
+#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+
+#else // rev0
 #define USE_BARO_MS5611
+
+#define M25P16_CS_PIN           SPI3_NSS_PIN
+#define M25P16_SPI_INSTANCE     SPI3
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+
+#endif
 
 #define OSD
 #define USE_MAX7456
@@ -74,12 +115,6 @@
 //#define PITOT
 //#define USE_PITOT_MS4525
 //#define MS4525_BUS I2C_DEVICE_EXT
-
-#define M25P16_CS_PIN           SPI3_NSS_PIN
-#define M25P16_SPI_INSTANCE     SPI3
-
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
 
 #define USE_VCP
 #define VBUS_SENSING_PIN PC5

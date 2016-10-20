@@ -77,8 +77,13 @@ const uint16_t airPWM[] = {
 
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+#ifdef OBF4_REV1
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM4},// PPM (5th pin on FlexiIO port)
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM4},// S2_IN - GPIO_PartialRemap_TIM3
+#else // rev0
     { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM12 },// PPM (5th pin on FlexiIO port)
     { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM12 },// S2_IN - GPIO_PartialRemap_TIM3
+#endif
     { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,        0, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S3_IN
     { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,        0, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S4_IN
     { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,        0, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S5_IN
