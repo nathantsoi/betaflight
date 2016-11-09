@@ -15,11 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
 
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
+
+uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream);
 
 typedef enum {
     DMA1_ST0_HANDLER = 0,

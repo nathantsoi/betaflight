@@ -67,8 +67,8 @@ typedef enum {
 #if defined(BARO) || defined(SONAR)
     TASK_ALTITUDE,
 #endif
-#ifdef DISPLAY
-    TASK_DISPLAY,
+#ifdef USE_DASHBOARD
+    TASK_DASHBOARD,
 #endif
 #ifdef TELEMETRY
     TASK_TELEMETRY,
@@ -85,6 +85,9 @@ typedef enum {
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif
+#ifdef CMS
+    TASK_CMS,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
@@ -98,8 +101,8 @@ typedef struct {
     /* Configuration */
     const char * taskName;
     const char * subTaskName;
-    bool (*checkFunc)(uint32_t currentDeltaTime);
-    void (*taskFunc)(void);
+    bool (*checkFunc)(uint32_t currentTime, uint32_t currentDeltaTime);
+    void (*taskFunc)(uint32_t currentTime);
     uint32_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 

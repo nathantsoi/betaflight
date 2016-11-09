@@ -22,17 +22,17 @@
 #include <string.h>
 
 #include "platform.h"
-#include "version.h"
 
 #ifdef USE_MAX7456
 
 #include "common/printf.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"
@@ -294,7 +294,7 @@ void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
 	screenBuffer[y*30+x] = c;
 }
 
-void max7456Write(uint8_t x, uint8_t y, char *buff)
+void max7456Write(uint8_t x, uint8_t y, const char *buff)
 {
 	uint8_t i = 0;
 	for (i = 0; *(buff+i); i++)
@@ -387,7 +387,7 @@ void max7456RefreshAll(void)
     }
 }
 
-void max7456WriteNvm(uint8_t char_address, uint8_t *font_data)
+void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 {
     uint8_t x;
 

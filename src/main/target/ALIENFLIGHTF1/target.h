@@ -26,9 +26,9 @@
 #define BEEPER                  PA12
 
 #define USE_EXTI
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define MAG_INT_EXTI            PC14
 #define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define GYRO
 #define USE_GYRO_MPU6050
@@ -59,10 +59,6 @@
 
 
 #define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef GPS
 
@@ -88,4 +84,5 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         ( BIT(13) | BIT(14) | BIT(15) )
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )

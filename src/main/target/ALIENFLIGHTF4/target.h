@@ -35,7 +35,6 @@
 // MPU interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -119,6 +118,9 @@
 
 #define SERIAL_PORT_COUNT       4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -144,12 +146,6 @@
 
 // LED strip configuration using RC5 pin.
 //#define LED_STRIP
-
-//#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-//#define WS2811_PIN                    PB15 // TIM8_CH3
-//#define WS2811_TIMER                  TIM8
-//#define WS2811_DMA_CHANNEL            DMA1_Channel3
-//#define WS2811_IRQ                    DMA1_Channel3_IRQn
 
 #define SPEKTRUM_BIND
 // USART2, PA3

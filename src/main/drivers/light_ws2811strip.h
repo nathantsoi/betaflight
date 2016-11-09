@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "io_types.h"
+
 #define WS2811_LED_STRIP_LENGTH 32
 #define WS2811_BITS_PER_LED 24
 #define WS2811_DELAY_BUFFER_LENGTH 42 // for 50us delay
@@ -28,14 +30,17 @@
 #if defined(STM32F40_41xxx)
 #define BIT_COMPARE_1 67 // timer compare value for logical 1
 #define BIT_COMPARE_0 33  // timer compare value for logical 0
+#elif defined(STM32F7)
+#define BIT_COMPARE_1 76 // timer compare value for logical 1
+#define BIT_COMPARE_0 38  // timer compare value for logical 0
 #else
 #define BIT_COMPARE_1 17 // timer compare value for logical 1
 #define BIT_COMPARE_0 9  // timer compare value for logical 0
 #endif
 
-void ws2811LedStripInit(void);
+void ws2811LedStripInit(ioTag_t ioTag);
 
-void ws2811LedStripHardwareInit(void);
+void ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(void);
@@ -51,7 +56,7 @@ void setStripColors(const hsvColor_t *colors);
 
 bool isWS2811LedStripReady(void);
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];

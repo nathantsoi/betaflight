@@ -61,6 +61,9 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT       4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -134,7 +137,15 @@
 //#define USE_QUAD_MIXER_ONLY
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
+#define USE_DASHBOARD
+
 #define OSD
+
+// Configuratoin Menu System
+#define CMS
+
+// Use external display connected by MSP to run CMS
+#define USE_MSP_DISPLAYPORT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
