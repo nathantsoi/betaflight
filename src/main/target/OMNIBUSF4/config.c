@@ -34,14 +34,16 @@ void targetConfiguration(master_t *config)
     // set the right PWM/PPM inputs
     if (hardwareRevision == OMNIBUSF4V0) {
         config->ppmConfig.ioTag = timerHardware[0].tag;
-        config->pwmConfig.ioTags[0] = timerHardware[1].tag;
+        config->pwmConfig.ioTags[0] = timerHardware[0].tag;
+        config->pwmConfig.ioTags[1] = timerHardware[1].tag;
     } else {
         config->ppmConfig.ioTag = timerHardware[2].tag;
-        config->pwmConfig.ioTags[0] = timerHardware[3].tag;
+        config->pwmConfig.ioTags[0] = timerHardware[2].tag;
+        config->pwmConfig.ioTags[1] = timerHardware[3].tag;
     }
     // all the rest of the PWM inputs are the same
-    int inputIndex = 1;
-    for (int i = 2; i < USABLE_TIMER_CHANNEL_COUNT - 2 && inputIndex < PWM_INPUT_PORT_COUNT - 1; i++) {
+    int inputIndex = 2;
+    for (int i = 4; i < USABLE_TIMER_CHANNEL_COUNT - 4 && inputIndex < PWM_INPUT_PORT_COUNT - 2; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             config->pwmConfig.ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;
