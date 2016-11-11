@@ -519,10 +519,18 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
+#ifdef USE_HARDWARE_REVISION_DETECTION
+
 #ifdef NAZE
     if (hardwareRevision == NAZE32_REV5) {
         m25p16_init(IO_TAG_NONE);
     }
+#elif defined(OMNIBUSF4)
+    if (hardwareRevision == OMNIBUSF4V0) {
+        m25p16_init(IO_TAG(M25P16_CS_PIN));
+    }
+#endif
+
 #elif defined(USE_FLASH_M25P16)
     m25p16_init(IO_TAG_NONE);
 #endif

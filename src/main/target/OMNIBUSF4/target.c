@@ -24,13 +24,15 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-#ifdef OBF4_REV1
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_PWM | TIM_USE_PPM, 0, GPIO_AF_TIM4, NULL, 0, 0},// PPM (5th pin on FlexiIO port)
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_PWM, 0, GPIO_AF_TIM4, NULL, 0, 0},// S2_IN - GPIO_PartialRemap_TIM3
-#else // rev0
+    // V0
     { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM_USE_PWM | TIM_USE_PPM, 0, GPIO_AF_TIM12, NULL, 0, 0 }, // PPM (5th pin on FlexiIO port)
     { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM_USE_PWM, 0, GPIO_AF_TIM12, NULL, 0, 0 }, // S2_IN - GPIO_PartialRemap_TIM3
-#endif
+
+    // V1
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_PWM | TIM_USE_PPM, 0, GPIO_AF_TIM4, NULL, 0, 0},// PPM (5th pin on FlexiIO port)
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_PWM, 0, GPIO_AF_TIM4, NULL, 0, 0},// S2_IN - GPIO_PartialRemap_TIM3
+
+    // Same for V0 and V1
     { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM_USE_PWM, 0, GPIO_AF_TIM8,  NULL, 0, 0 }, // S3_IN
     { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM_USE_PWM, 0, GPIO_AF_TIM8,  NULL, 0, 0 }, // S4_IN
     { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM_USE_PWM, 0, GPIO_AF_TIM8,  NULL, 0, 0 }, // S5_IN

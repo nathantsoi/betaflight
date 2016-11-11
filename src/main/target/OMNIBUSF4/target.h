@@ -17,7 +17,8 @@
 
 #pragma once
 
-#define OBF4_REV1
+#define TARGET_CONFIG
+#define USE_HARDWARE_REVISION_DETECTION
 
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 
@@ -60,20 +61,25 @@
 //#define USE_MAG_NAZA
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP
 
-#ifdef OBF4_REV1 // v2 and pro
 #define BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3
 
-#define USE_SPI_DEVICE_2
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PA15
 
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+// v0 -- instead of the sdcard
+// be aware that the presence of the M25P16 flash chip is used to determine the board version
+#define M25P16_CS_PIN           SPI3_NSS_PIN
+#define M25P16_SPI_INSTANCE     SPI3
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
+// v1 -- instead of the flash
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
@@ -92,21 +98,7 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
-#else // rev0
-#define USE_BARO_MS5611
-
-#define M25P16_CS_PIN           SPI3_NSS_PIN
-#define M25P16_SPI_INSTANCE     SPI3
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
-
-#endif
-
-#define OSD
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI3
-#define MAX7456_SPI_CS_PIN      PA15
-
+// v0: flash is on the bus, v1: BMP280 is on the bus, don't use DMA
 //#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
@@ -143,6 +135,13 @@
 
 #define USE_SPI_DEVICE_1
 
+#define USE_SPI_DEVICE_2
+
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
+
 #define USE_SPI_DEVICE_3
 #define SPI3_NSS_PIN            PB3
 #define SPI3_SCK_PIN            PC10
@@ -175,5 +174,5 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 12
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
