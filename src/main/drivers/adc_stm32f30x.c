@@ -30,6 +30,7 @@
 #include "adc_impl.h"
 #include "io.h"
 #include "rcc.h"
+#include "dma.h"
 
 #include "common/utils.h"
 
@@ -38,8 +39,12 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 }, 
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA2), .DMAy_Channelx = DMA2_Channel1 } 
+    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
+#ifdef ADC24_DMA_REMAP
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 }
+#else
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 }
+#endif
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -133,13 +138,16 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
+#ifdef ADC24_DMA_REMAP
+    SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_ADC2ADC4, ENABLE);
+#endif
     adcDevice_t adc = adcHardware[device];
 
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i,0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i,0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = adcChannelCount++;
@@ -149,7 +157,8 @@ void adcInit(drv_adc_config_t *init)
 
     RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
+
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Channelx);
 

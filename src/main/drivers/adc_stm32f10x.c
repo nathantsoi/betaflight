@@ -32,13 +32,14 @@
 #include "adc_impl.h"
 #include "io.h"
 #include "rcc.h"
+#include "dma.h"
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE   ADC1
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 } 
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
@@ -63,7 +64,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA6, ADC_Channel_6 }, // ADC12
     { DEFIO_TAG_E__PA7, ADC_Channel_7 }, // ADC12
     { DEFIO_TAG_E__PB0, ADC_Channel_8 }, // ADC12
-    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12  
+    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12
 };
 
 // Driver for STM32F103CB onboard ADC
@@ -117,11 +118,11 @@ void adcInit(drv_adc_config_t *init)
 
     const adcDevice_t adc = adcHardware[device];
 
-    for (int  i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i, 0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
@@ -131,7 +132,8 @@ void adcInit(drv_adc_config_t *init)
 
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
+
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Channelx);
     DMA_InitTypeDef DMA_InitStructure;

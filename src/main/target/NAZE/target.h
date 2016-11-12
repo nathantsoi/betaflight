@@ -120,7 +120,7 @@
 
 #define USE_UART1
 #define USE_UART2
-/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */
 //#define USE_UART3
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
@@ -157,7 +157,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
+#if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

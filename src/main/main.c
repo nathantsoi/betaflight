@@ -235,10 +235,6 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
-#if !defined(USE_HAL_DRIVER)
-    dmaInit();
-#endif
-
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
@@ -284,7 +280,7 @@ void init(void)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);        
+        pwmRxInit(&masterConfig.pwmConfig);
     }
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif

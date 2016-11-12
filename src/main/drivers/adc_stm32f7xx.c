@@ -25,6 +25,7 @@
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
+#include "dma.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -36,13 +37,13 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_CHANNEL_0 },
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_CHANNEL_0 },
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
 };
 
 /* note these could be packed up for saving space */
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
 /*
     { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
     { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
@@ -130,7 +131,7 @@ void adcInit(drv_adc_config_t *init)
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
@@ -138,8 +139,9 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[i].enabled = true;
     }
 
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
+
     RCC_ClockCmd(adc.rccADC, ENABLE);
+    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
     ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
     ADCHandle.Init.ContinuousConvMode    = ENABLE;
