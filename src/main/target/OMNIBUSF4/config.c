@@ -31,6 +31,9 @@
 
 void targetConfiguration(master_t *config)
 {
+    // default to serialrx / sbus
+    config->rxConfig.serialrx_provider = SERIALRX_SBUS;
+
     // set the right PWM/PPM inputs
     if (hardwareRevision == OMNIBUSF4V0) {
         config->ppmConfig.ioTag = timerHardware[0].tag;
