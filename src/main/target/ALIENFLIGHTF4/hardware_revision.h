@@ -14,7 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef enum awf4HardwareRevision_t {
+    UNKNOWN = 0,
+    AFF4_REV_1,
+    AFF4_REV_2
+} awf4HardwareRevision_e;
+
+extern uint8_t hardwareRevision;
+
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);
+
+struct extiConfig_s;
