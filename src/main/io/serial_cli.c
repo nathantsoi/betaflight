@@ -2996,6 +2996,10 @@ static void cliEscPassthrough(char *cmdline)
                 {
                     mode = 2;
                 }
+                else if(strncasecmp(pch, "cc", strlen(pch)) == 0)
+                {
+                    mode = 4;
+                }
                 else
                 {
                     cliShowParseError();
@@ -3759,7 +3763,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SERVOS
     { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
     { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif
