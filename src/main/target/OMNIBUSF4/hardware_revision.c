@@ -54,6 +54,8 @@ uint8_t detectSpiDevice(void)
 {
 #ifdef M25P16_CS_PIN
     omnibusf4SpiCsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
+    IOInit(omnibusf4SpiCsPin, OWNER_BARO_CS, 0);
+    IOConfigGPIO(omnibusf4SpiCsPin, IOCFG_OUT_PP);
 #endif
 
     uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
