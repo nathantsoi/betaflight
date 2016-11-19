@@ -106,9 +106,6 @@
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
-#define CMS
-#define USE_MSP_DISPLAYPORT
-
 //#define PITOT
 //#define USE_PITOT_MS4525
 //#define MS4525_BUS I2C_DEVICE_EXT
@@ -160,6 +157,7 @@
 //#define RSSI_ADC_PIN            PA0
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
 

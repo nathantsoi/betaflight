@@ -38,12 +38,15 @@
 #endif
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
-#if defined(AIRBOTF4) || defined(REVOLT)
+#if defined(AIRBOTF4) 
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
+#elif defined(REVOLT)
+#define BEEPER                  PB4
 #else
 #define LED1                    PB4
 // Leave beeper here but with none as io - so disabled unless mapped.
@@ -167,6 +170,3 @@
 #endif
 
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
-
-#define CMS
-#define USE_MSP_DISPLAYPORT
