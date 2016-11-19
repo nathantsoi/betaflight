@@ -18,20 +18,19 @@
 
 #include <platform.h>
 
-#include "fc/rc_controls.h"
+#include "config/config_master.h"
+#include "config/feature.h"
 
-#include "rx/rx.h"
+#include "blackbox/blackbox_io.h"
 
 #include "drivers/timer.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #include "hardware_revision.h"
 
 void targetConfiguration(master_t *config)
 {
     // default to serialrx / sbus
+    intFeatureSet(FEATURE_RX_SERIAL, &config->enabledFeatures);
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
 
     // set the right PWM/PPM inputs
@@ -50,6 +49,24 @@ void targetConfiguration(master_t *config)
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             config->pwmConfig.ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;
+        }
+    }
+    // no sdcard on the v0
+    if (hardwareRevision == OMNIBUSF4V0) {
+      intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+      config->blackbox_device = BLACKBOX_DEVICE_FLASH;
+    } else {
+      config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
+    }
+}
+
+void targetValidateConfiguration(master_t *config)
+{
+    // make sure the SDCARD cannot be turned on for the v0
+    if (hardwareRevision == OMNIBUSF4V0) {
+        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        if (config->blackbox_device == BLACKBOX_DEVICE_SDCARD) {
+            config->blackbox_device = BLACKBOX_DEVICE_FLASH;
         }
     }
 }

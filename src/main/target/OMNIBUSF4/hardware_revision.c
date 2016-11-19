@@ -45,8 +45,9 @@ void detectHardwareRevision(void) {}
 #define SPI_DEVICE_NONE (0)
 #define SPI_DEVICE_FLASH (1)
 
-#define M25P16_INSTRUCTION_RDID 0x9F
-#define FLASH_M25P16_ID (0x20ba18)
+#define M25P16_INSTRUCTION_RDID        0x9F
+#define FLASH_M25P16_ID                0x20ba18
+#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
 static IO_t omnibusf4SpiCsPin = IO_NONE;
 
@@ -54,7 +55,7 @@ uint8_t detectSpiDevice(void)
 {
 #ifdef M25P16_CS_PIN
     omnibusf4SpiCsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
-    IOInit(omnibusf4SpiCsPin, OWNER_BARO_CS, 0);
+    IOInit(omnibusf4SpiCsPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(omnibusf4SpiCsPin, IOCFG_OUT_PP);
 #endif
 
@@ -69,7 +70,7 @@ uint8_t detectSpiDevice(void)
     DISABLE_SPI_CS;
 
     flash_id = in[1] << 16 | in[2] << 8 | in[3];
-    if (flash_id == FLASH_M25P16_ID)
+    if (flash_id == FLASH_M25P16_ID || flash_id == JEDEC_ID_WINBOND_W25Q128)
         return SPI_DEVICE_FLASH;
 
     return SPI_DEVICE_NONE;
