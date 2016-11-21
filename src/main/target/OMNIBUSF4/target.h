@@ -67,7 +67,7 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
-#define BMP280_CS_PIN           PB3 // V1
+#define BMP280_CS_PIN           PB3 // v1
 
 #define OSD
 #define USE_MAX7456
@@ -76,14 +76,14 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-// v0 -- instead of the sdcard
+// v1 -- instead of the sdcard
 // be aware that the presence of the M25P16 flash chip is used to determine the board version
-#define M25P16_CS_PIN           PB3 // V0
+#define M25P16_CS_PIN           PB3 // v1
 #define M25P16_SPI_INSTANCE     SPI3
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-// v1 -- instead of the flash
+// v2 -- instead of the flash
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
@@ -102,7 +102,7 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
-// v0: flash is on the bus, v1: BMP280 is on the bus, don't use DMA
+// v1: flash is on the bus, v2: BMP280 is on the bus, don't use DMA
 //#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER

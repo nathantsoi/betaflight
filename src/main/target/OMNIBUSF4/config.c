@@ -33,17 +33,25 @@ void targetConfiguration(master_t *config)
     intFeatureSet(FEATURE_RX_SERIAL, &config->enabledFeatures);
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
 
-    // set the right PWM/PPM inputs
-    if (hardwareRevision == OMNIBUSF4V0) {
+    if (hardwareRevision == OMNIBUSF4V1) {
+        // set the right PWM/PPM inputs
         config->ppmConfig.ioTag = timerHardware[0].tag;
         config->pwmConfig.ioTags[0] = timerHardware[0].tag;
         config->pwmConfig.ioTags[1] = timerHardware[1].tag;
+        // SDCARD is not present on the V1
+        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        config->blackbox_device = BLACKBOX_DEVICE_FLASH;
     } else {
+        // set the right PWM/PPM inputs
         config->ppmConfig.ioTag = timerHardware[2].tag;
         config->pwmConfig.ioTags[0] = timerHardware[2].tag;
         config->pwmConfig.ioTags[1] = timerHardware[3].tag;
+        // use the SDCARD on the V2
+        config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
+        // 0 for baro -> AUTO
+        config->baro_hardware = 0;
     }
-    // all the rest of the PWM inputs are the same
+    // all the rest of the PWM inputs are the same, set those
     int inputIndex = 2;
     for (int i = 4; i < USABLE_TIMER_CHANNEL_COUNT - 4 && inputIndex < PWM_INPUT_PORT_COUNT - 2; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
@@ -51,19 +59,12 @@ void targetConfiguration(master_t *config)
             inputIndex++;
         }
     }
-    // no sdcard on the v0
-    if (hardwareRevision == OMNIBUSF4V0) {
-      intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
-      config->blackbox_device = BLACKBOX_DEVICE_FLASH;
-    } else {
-      config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
-    }
 }
 
 void targetValidateConfiguration(master_t *config)
 {
-    // make sure the SDCARD cannot be turned on for the v0
-    if (hardwareRevision == OMNIBUSF4V0) {
+    // make sure the SDCARD cannot be turned on for the v1
+    if (hardwareRevision == OMNIBUSF4V1) {
         intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
         if (config->blackbox_device == BLACKBOX_DEVICE_SDCARD) {
             config->blackbox_device = BLACKBOX_DEVICE_FLASH;

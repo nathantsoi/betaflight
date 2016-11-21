@@ -311,7 +311,13 @@ void init(void)
     spiInit(SPIDEV_1);
 #endif
 #ifdef USE_SPI_DEVICE_2
+#ifdef OMNIBUSF4
+    if (hardwareRevision == OMNIBUSF4V2) {
+        spiInit(SPIDEV_2);
+    }
+#else
     spiInit(SPIDEV_2);
+#endif
 #endif
 #ifdef USE_SPI_DEVICE_3
 #ifdef ALIENFLIGHTF3
@@ -527,7 +533,7 @@ void init(void)
         m25p16_init(IO_TAG_NONE);
     }
 #elif defined(OMNIBUSF4)
-    if (hardwareRevision == OMNIBUSF4V0) {
+    if (hardwareRevision == OMNIBUSF4V1) {
         m25p16_init(IO_TAG(M25P16_CS_PIN));
     }
 #endif

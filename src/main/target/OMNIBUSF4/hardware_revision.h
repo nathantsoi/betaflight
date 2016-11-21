@@ -16,8 +16,8 @@
 
 typedef enum omnibusf4HardwareRevision_t {
     UNKNOWN,
-    OMNIBUSF4V0, // 16mb of flash on a M25P16
-    OMNIBUSF4V1 // PPM and S2_IN are re-mapped, added a BMP280, SDCARD instead of flash
+    OMNIBUSF4V1, // 16mb of flash on a M25P16
+    OMNIBUSF4V2 // PPM and S2_IN are re-mapped, added a BMP280, SDCARD instead of flash
 } omnibusHardwareRevision_e;
 
 extern uint8_t hardwareRevision;

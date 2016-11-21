@@ -81,7 +81,7 @@ void updateHardwareRevision(void)
     uint8_t detectedSpiDevice = detectSpiDevice();
 
     if (detectedSpiDevice == SPI_DEVICE_FLASH)
-        hardwareRevision = OMNIBUSF4V0;
-    else
         hardwareRevision = OMNIBUSF4V1;
+    else
+        hardwareRevision = OMNIBUSF4V2;
 }
