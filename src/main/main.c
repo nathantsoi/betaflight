@@ -75,6 +75,7 @@
 #include "rx/spektrum.h"
 
 #include "io/beeper.h"
+#include "io/displayport_max7456.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -263,10 +264,15 @@ void init(void)
         idlePulse = 0; // brushed motors
     }
 
+    mixerConfigureOutput();
+#ifdef USE_SERVOS
+    servoConfigureOutput();
+#endif
+
 #ifdef USE_QUAD_MIXER_ONLY
     motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
 #else
-    motorInit(&masterConfig.motorConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
+    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
 #endif
 
 #ifdef USE_SERVOS
@@ -285,10 +291,7 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    mixerConfigureOutput();
-#ifdef USE_SERVOS
-    servoConfigureOutput();
-#endif
+
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -404,7 +407,13 @@ void init(void)
 
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#ifdef USE_MAX7456
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
+#else
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
     }
 #endif
 
