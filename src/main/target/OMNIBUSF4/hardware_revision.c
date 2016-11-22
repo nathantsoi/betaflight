@@ -37,8 +37,6 @@ static const char * const hardwareRevisionNames[] = {
 
 uint8_t hardwareRevision = UNKNOWN;
 
-void detectHardwareRevision(void) {}
-
 #define DISABLE_SPI_CS       IOHi(omnibusf4SpiCsPin)
 #define ENABLE_SPI_CS        IOLo(omnibusf4SpiCsPin)
 
@@ -76,8 +74,10 @@ uint8_t detectSpiDevice(void)
     return SPI_DEVICE_NONE;
 }
 
-void updateHardwareRevision(void)
-{
+void detectHardwareRevision(void) {
+}
+
+void updateHardwareRevision(void) {
     uint8_t detectedSpiDevice = detectSpiDevice();
 
     if (detectedSpiDevice == SPI_DEVICE_FLASH)
