@@ -51,6 +51,7 @@ static IO_t omnibusf4SpiCsPin = IO_NONE;
 
 uint8_t detectSpiDevice(void)
 {
+    spiInit(SPIDEV_3);
 #ifdef M25P16_CS_PIN
     omnibusf4SpiCsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
     IOInit(omnibusf4SpiCsPin, OWNER_FLASH_CS, 0);
@@ -75,13 +76,13 @@ uint8_t detectSpiDevice(void)
 }
 
 void detectHardwareRevision(void) {
-}
-
-void updateHardwareRevision(void) {
     uint8_t detectedSpiDevice = detectSpiDevice();
 
     if (detectedSpiDevice == SPI_DEVICE_FLASH)
         hardwareRevision = OMNIBUSF4V1;
     else
         hardwareRevision = OMNIBUSF4V2;
+}
+
+void updateHardwareRevision(void) {
 }

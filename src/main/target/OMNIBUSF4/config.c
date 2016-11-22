@@ -31,39 +31,27 @@
 void targetConfiguration(master_t *config)
 {
     // default to serialrx / sbus
-    intFeatureSet(FEATURE_RX_SERIAL, &config->enabledFeatures);
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
+    // RX is on uart1 by default
+    //config->serialConfig.portConfigs[0].functionMask = FUNCTION_RX_SERIAL;
 
-    if (hardwareRevision == OMNIBUSF4V1) {
-        // SDCARD is not present on the V1
-        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
-        config->blackbox_device = BLACKBOX_DEVICE_FLASH;
-    } else {
-        // use the SDCARD on the V2
-        config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
-        // 0 for baro -> AUTO
-        config->baro_hardware = 0;
-    }
-}
-
-// called every startup
-void targetValidateConfiguration(master_t *config)
-{
     if (hardwareRevision == OMNIBUSF4V1) {
         // set the right PWM/PPM inputs
         config->ppmConfig.ioTag = timerHardware[0].tag;
         config->pwmConfig.ioTags[0] = timerHardware[0].tag;
         config->pwmConfig.ioTags[1] = timerHardware[1].tag;
-        // make sure the SDCARD cannot be turned on for the v1
+        // SDCARD is not present on the V1
         intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
-        if (config->blackbox_device == BLACKBOX_DEVICE_SDCARD) {
-            config->blackbox_device = BLACKBOX_DEVICE_FLASH;
-        }
+        config->blackbox_device = BLACKBOX_DEVICE_FLASH;
     } else {
         // set the right PWM/PPM inputs
         config->ppmConfig.ioTag = timerHardware[2].tag;
         config->pwmConfig.ioTags[0] = timerHardware[2].tag;
         config->pwmConfig.ioTags[1] = timerHardware[3].tag;
+        // use the SDCARD on the V2
+        config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
+        // 0 for baro -> AUTO
+        config->baro_hardware = 0;
     }
     // all the rest of the PWM inputs are the same, set those
     int inputIndex = 2;
@@ -71,6 +59,18 @@ void targetValidateConfiguration(master_t *config)
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             config->pwmConfig.ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;
+        }
+    }
+}
+
+// called every startup
+void targetValidateConfiguration(master_t *config)
+{
+    if (hardwareRevision == OMNIBUSF4V1) {
+        // make sure the SDCARD cannot be turned on for the v1
+        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        if (config->blackbox_device == BLACKBOX_DEVICE_SDCARD) {
+            config->blackbox_device = BLACKBOX_DEVICE_FLASH;
         }
     }
 }
