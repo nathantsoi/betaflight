@@ -41,6 +41,40 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+
+#define USE_RX_NRF24
+#ifdef USE_RX_NRF24
+
+#define USE_RX_SPI
+#define RX_SPI_INSTANCE         SPI1
+
+// Nordic Semiconductor uses 'CSN', STM uses 'NSS'
+#define RX_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
+#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+// SPI1
+// PB5  SPI1_MOSI
+// PB4  SPI1_MISO
+// PB3  SPI1_SCK
+// PA15 SPI1_NSS
+#define RX_CE_PIN               PB7
+#define RX_NSS_PIN              PB6
+#define RX_SCK_PIN              PB3
+#define RX_MISO_PIN             PB4
+#define RX_MOSI_PIN             PB5
+#define RX_IRQ_PIN              PA8
+// CJMCU has NSS on PA11, rather than the standard PA4
+#define SPI1_NSS_PIN            RX_NSS_PIN
+#define SPI1_SCK_PIN            RX_SCK_PIN
+#define SPI1_MISO_PIN           RX_MISO_PIN
+#define SPI1_MOSI_PIN           RX_MOSI_PIN
+
+#define USE_RX_SYMA
+#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
+#endif //USE_RX_NRF24
+
 #define USE_SPI_DEVICE_2
 
 #define SPI2_NSS_PIN            PB12
@@ -74,51 +108,51 @@
 
 #define GYRO
 #define USE_FAKE_GYRO
-#define USE_GYRO_L3GD20
-#define L3GD20_SPI              SPI1
-#define L3GD20_CS_PIN           PE3
-#define GYRO_L3GD20_ALIGN       CW270_DEG
-#define USE_GYRO_L3G4200D
-#define USE_GYRO_MPU3050
-#define USE_GYRO_MPU6050
-#define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI2_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI2
-// Support the GY-91 MPU9250 dev board
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          PC14
-#define MPU6500_SPI_INSTANCE    SPI2
-#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
-#define USE_GYRO_SPI_MPU9250
-#define MPU9250_CS_PIN          SPI2_NSS_PIN
-#define MPU9250_SPI_INSTANCE    SPI2
+//#define USE_GYRO_L3GD20
+//#define L3GD20_SPI              SPI1
+//#define L3GD20_CS_PIN           PE3
+//#define GYRO_L3GD20_ALIGN       CW270_DEG
+//#define USE_GYRO_L3G4200D
+//#define USE_GYRO_MPU3050
+//#define USE_GYRO_MPU6050
+//#define USE_GYRO_SPI_MPU6000
+//#define MPU6000_CS_PIN          SPI2_NSS_PIN
+//#define MPU6000_SPI_INSTANCE    SPI2
+//// Support the GY-91 MPU9250 dev board
+//#define USE_GYRO_MPU6500
+//#define USE_GYRO_SPI_MPU6500
+//#define MPU6500_CS_PIN          PC14
+//#define MPU6500_SPI_INSTANCE    SPI2
+//#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
+//#define USE_GYRO_SPI_MPU9250
+//#define MPU9250_CS_PIN          SPI2_NSS_PIN
+//#define MPU9250_SPI_INSTANCE    SPI2
 
 #define ACC
 #define USE_FAKE_ACC
-#define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
-#define USE_ACC_MPU6050
-#define USE_ACC_LSM303DLHC
-#define USE_ACC_MPU6000
-#define USE_ACC_SPI_MPU6000
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define USE_ACC_MPU9250
-#define USE_ACC_SPI_MPU9250
-#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
+//#define USE_ACC_ADXL345
+//#define USE_ACC_BMA280
+//#define USE_ACC_MMA8452
+//#define USE_ACC_MPU6050
+//#define USE_ACC_LSM303DLHC
+//#define USE_ACC_MPU6000
+//#define USE_ACC_SPI_MPU6000
+//#define USE_ACC_MPU6500
+//#define USE_ACC_SPI_MPU6500
+//#define USE_ACC_MPU9250
+//#define USE_ACC_SPI_MPU9250
+//#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
 
 #define BARO
 #define USE_FAKE_BARO
-#define USE_BARO_BMP085
-#define USE_BARO_BMP280
-#define USE_BARO_MS5611
+//#define USE_BARO_BMP085
+//#define USE_BARO_BMP280
+//#define USE_BARO_MS5611
 
 #define OSD
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI2
-#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
+//#define USE_MAX7456
+//#define MAX7456_SPI_INSTANCE    SPI2
+//#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
 #define CMS
 
@@ -141,17 +175,17 @@
 
 #define MAG
 #define USE_FAKE_MAG
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
+//#define USE_MAG_AK8963
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_UART1
-#define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define SERIAL_PORT_COUNT       6
+//#define USE_UART1
+//#define USE_UART2
+//#define USE_UART3
+//#define USE_UART4
+//#define USE_UART5
+#define SERIAL_PORT_COUNT       1
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
