@@ -31,6 +31,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/serial.h"
+#include "drivers/stack_check.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -71,6 +72,10 @@
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#ifdef USE_BST
+void taskBstMasterProcess(uint32_t currentTime);
+#endif
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
@@ -120,7 +125,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
@@ -153,7 +158,7 @@ static void taskUpdateRxMain(uint32_t currentTime)
 static void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTime, &masterConfig.sensorTrims.magZero);
+        compassUpdate(currentTime, &sensorTrims()->magZero);
     }
 }
 #endif
@@ -193,7 +198,7 @@ static void taskTelemetry(uint32_t currentTime)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTime, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
     }
 }
 #endif
@@ -215,7 +220,7 @@ void fcTasksInit(void)
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, accSamplingInterval);
+        rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
     }
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
@@ -251,10 +256,10 @@ void fcTasksInit(void)
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
-        if (masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+        if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } else if (masterConfig.rxConfig.serialrx_provider == SERIALRX_CRSF) {
+        } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }
@@ -282,6 +287,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -295,7 +303,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoopCheck,
+        .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
@@ -457,6 +465,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = cmsHandler,
         .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 };
