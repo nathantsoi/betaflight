@@ -22,7 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
+#include "build/debug.h"
 
 #ifdef USE_RX_SYMA
 
@@ -230,6 +231,10 @@ static void setSymaXHoppingChannels(uint32_t addr)
 rx_spi_received_e symaNrf24DataReceived(uint8_t *payload)
 {
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
+
+#ifdef DEBUG_RX_SYMA
+    debug[2] = *payload;
+#endif
 
     switch (protocolState) {
     case STATE_BIND:

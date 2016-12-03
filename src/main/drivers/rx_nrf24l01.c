@@ -22,7 +22,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
+#include "build/debug.h"
 
 #ifdef USE_RX_NRF24
 
@@ -122,6 +123,9 @@ static uint8_t standbyConfig;
 void NRF24L01_Initialize(uint8_t baseConfig)
 {
     standbyConfig = BV(NRF24L01_00_CONFIG_PWR_UP) | baseConfig;
+#ifdef DEBUG_RX_SYMA
+    debug[3] = standbyConfig;
+#endif
     NRF24_CE_LO();
     // nRF24L01+ needs 100 milliseconds settling time from PowerOnReset to PowerDown mode
     static const uint32_t settlingTimeUs = 100000;
@@ -222,6 +226,9 @@ bool NRF24L01_ReadPayloadIfAvailableFast(uint8_t *data, uint8_t length)
     ENABLE_RX();
     rxSpiTransferByte(R_REGISTER | (REGISTER_MASK & NRF24L01_07_STATUS));
     const uint8_t status = rxSpiTransferByte(NOP);
+#ifdef DEBUG_RX_SYMA
+    debug[1] = status;
+#endif
     if ((status & BV(NRF24L01_07_STATUS_RX_DR)) == 0) {
         ret = true;
         // clear RX_DR flag

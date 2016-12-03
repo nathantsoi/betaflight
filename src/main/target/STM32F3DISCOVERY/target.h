@@ -40,23 +40,19 @@
 #define BEEPER_INVERTED
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_3
 
 #define USE_RX_NRF24
 #ifdef USE_RX_NRF24
+#define DEBUG_RX_SYMA
 
 #define USE_RX_SPI
-#define RX_SPI_INSTANCE         SPI1
+#define RX_SPI_INSTANCE         SPI3
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
 #define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 #define RX_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-// SPI1
-// PB5  SPI1_MOSI
-// PB4  SPI1_MISO
-// PB3  SPI1_SCK
-// PA15 SPI1_NSS
 #define RX_CE_PIN               PB7
 #define RX_NSS_PIN              PB6
 #define RX_SCK_PIN              PB3
@@ -69,18 +65,20 @@
 #define SPI1_MISO_PIN           RX_MISO_PIN
 #define SPI1_MOSI_PIN           RX_MOSI_PIN
 
-#define USE_RX_SYMA
-#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X
+//#define USE_RX_SYMA
+#define USE_RX_INAV
+#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_INAV
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #endif //USE_RX_NRF24
 
-#define USE_SPI_DEVICE_2
-
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+//#define USE_SPI_DEVICE_2
+//
+//#define SPI2_NSS_PIN            PB12
+//#define SPI2_SCK_PIN            PB13
+//#define SPI2_MISO_PIN           PB14
+//#define SPI2_MOSI_PIN           PB15
 
 //#define USE_SD_CARD
 //
