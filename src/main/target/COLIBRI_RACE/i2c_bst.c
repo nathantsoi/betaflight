@@ -608,14 +608,17 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
         case BST_RAW_IMU:
             {
                 // Hack scale due to choice of units for sensor data in multiwii
-                uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
+                uint8_t scale = (acc.dev.acc_1G > 1024) ? 8 : 1;
 
-                for (i = 0; i < 3; i++)
-                    bstWrite16(accSmooth[i] / scale);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(gyroADC[i]);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(magADC[i]);
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(acc.accSmooth[i] / scale);
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(lrintf(gyro.gyroADCf[i] /gyro.dev.scale));
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(mag.magADC[i]);
+                }
             }
             break;
 #ifdef USE_SERVOS
@@ -1479,10 +1482,10 @@ void bstProcessInCommand(void)
     }
 }
 
-static void resetBstChecker(uint32_t currentTime)
+static void resetBstChecker(timeUs_t currentTimeUs)
 {
     if(needResetCheck) {
-        if(currentTime >= (resetBstTimer + BST_RESET_TIME))
+        if(currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
         {
             bstTimeoutUserCallback();
             needResetCheck = false;
@@ -1499,14 +1502,14 @@ static uint32_t next20hzUpdateAt_1 = 0;
 
 static uint8_t sendCounter = 0;
 
-void taskBstMasterProcess(uint32_t currentTime)
+void taskBstMasterProcess(timeUs_t currentTimeUs)
 {
     if(coreProReady) {
-        if(currentTime >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next02hzUpdateAt_1 && !bstWriteBusy()) {
             writeFCModeToBST();
-            next02hzUpdateAt_1 = currentTime + UPDATE_AT_02HZ;
+            next02hzUpdateAt_1 = currentTimeUs + UPDATE_AT_02HZ;
         }
-        if(currentTime >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next20hzUpdateAt_1 && !bstWriteBusy()) {
             if(sendCounter == 0)
                 writeRCChannelToBST();
             else if(sendCounter == 1)
@@ -1514,7 +1517,7 @@ void taskBstMasterProcess(uint32_t currentTime)
             sendCounter++;
             if(sendCounter > 1)
                 sendCounter = 0;
-            next20hzUpdateAt_1 = currentTime + UPDATE_AT_20HZ;
+            next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
 
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
@@ -1526,7 +1529,7 @@ void taskBstMasterProcess(uint32_t currentTime)
         stopMotors();
         systemReset();
     }
-    resetBstChecker(currentTime);
+    resetBstChecker(currentTimeUs);
 }
 
 /*************************************************************************************************/

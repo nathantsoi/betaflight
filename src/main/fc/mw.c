@@ -375,6 +375,7 @@ void mwDisarm(void)
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
 
+#ifdef TELEMETRY
 static void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
@@ -382,6 +383,7 @@ static void releaseSharedTelemetryPorts(void) {
         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     }
 }
+#endif
 
 void mwArm(void)
 {
@@ -491,12 +493,12 @@ void updateMagHold(void)
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
-void processRx(uint32_t currentTime)
+void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
 
-    calculateRxChannelsAndUpdateFailsafe(currentTime);
+    calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
@@ -504,11 +506,11 @@ void processRx(uint32_t currentTime)
             mwDisarm();
     }
 
-    updateRSSI(currentTime);
+    updateRSSI(currentTimeUs);
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+        if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
             failsafeStartMonitoring();
         }
 
@@ -702,8 +704,8 @@ void subTaskMainSubprocesses(void)
     const uint32_t startTime = micros();
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature) {
-        gyro.temperature(&telemTemperature1);
+    if (gyro.dev.temperature) {
+        gyro.dev.temperature(&telemTemperature1);
     }
 
     #ifdef MAG
@@ -809,9 +811,9 @@ uint8_t setPidUpdateCountDown(void)
 }
 
 // Function for loop trigger
-void taskMainPidLoop(uint32_t currentTime)
+void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
